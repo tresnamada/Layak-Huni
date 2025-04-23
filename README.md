@@ -34,3 +34,43 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Teknologi yang Digunakan
+
+- Next.js
+- TypeScript
+- Firebase (Firestore)
+- Google Gemini AI
+- Tailwind CSS
+
+## Troubleshooting
+
+Jika Anda mengalami masalah dengan SiHuni AI, coba langkah-langkah berikut:
+
+### "Failed to get response from AI"
+
+1. Periksa koneksi internet Anda
+2. Pastikan API key Gemini sudah benar di file `.env.local`
+3. Periksa apakah database Firestore dapat diakses dengan membuka endpoint test:
+   ```
+   http://localhost:3000/api/ai-chat/test
+   ```
+4. Uji koneksi Gemini API secara terpisah:
+   ```
+   http://localhost:3000/api/ai-chat/gemini-test
+   ```
+5. Periksa log server untuk melihat pesan error yang lebih detail
+
+### Masalah dengan Firestore
+
+1. Pastikan Anda telah mengonfigurasi Firebase dengan benar
+2. Periksa apakah koleksi `test` dan dokumen `minimalist house` dan `modern house` sudah ada di Firestore
+3. Pastikan Anda memiliki aturan keamanan Firestore yang memungkinkan membaca koleksi `test`
+
+### Masalah dengan Gemini API
+
+1. Pastikan Anda menggunakan API key yang valid dan aktif
+2. Jika model `gemini-1.5-pro` tidak tersedia, sistem akan mencoba `gemini-pro` sebagai fallback
+3. Anda mungkin perlu mengaktifkan API Gemini di Google Cloud Console
+
+Jika masalah masih berlanjut, periksa log server dan browser untuk pesan error yang lebih detail.
