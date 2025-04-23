@@ -8,7 +8,6 @@ import Footer from "@/components/Home/Footer";
 const Home = () => {
   return (
     <div className="bg-[#F6F6EC] ">
-
       <Hero/>
       <AI/>
       <Market/>
