@@ -105,8 +105,9 @@ export default function Navbar() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
             className="mt-4 p-3 text-amber-800 cursor-pointer bg-amber-100/50 rounded-full hover:bg-amber-100 transition-colors duration-300"
-          >
+          ><Link href="/login">
             <User size={24} />
+          </Link>
           </motion.div>
         </motion.div>
       )}
