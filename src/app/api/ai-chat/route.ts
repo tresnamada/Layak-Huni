@@ -16,83 +16,166 @@ interface HouseData {
   luas?: number;
   material?: string;
   tipe?: string;
-  [key: string]: any;
+  lokasi?: string;
+  fasilitas?: string[];
+  [key: string]: string | number | string[] | undefined;
 }
 
 // Available Gemini models to try
 const AVAILABLE_MODELS = ['gemini-2.0-flash'];
 
-// Initialize Gemini AI with your API key
-// In production, use environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'your-api-key-here');
+// Initialize Gemini AI with API key from environment variable
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error('GEMINI_API_KEY is not set in environment variables');
+}
+const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function POST(request: Request) {
   try {
-    const { userMessage, chatHistory, stage } = await request.json();
-    
-    // Log request data for debugging
-    console.log('Request received:', { userMessage, stage });
+    const { userMessage, answers, stage } = await request.json();
     
     // Fetch house data from Firestore
-    console.log('Fetching house data...');
     const houses = await getHouseData();
-    console.log('House data fetched:', houses.length);
     
-    // Try to initialize a working model
+    // Initialize the model with system prompt
     const model = await initializeWorkingModel(houses);
     
-    // Format the chat history for Gemini
-    const formattedHistory = formatChatHistory(chatHistory);
-    
     // Create a chat session
-    console.log('Creating chat session...');
     const chat = model.startChat({
-      history: formattedHistory,
+      history: [],
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.8,
+        topK: 40,
+      },
     });
-    
-    // Handle different stages of the conversation
+
     let response;
-    console.log('Sending message to Gemini, stage:', stage);
     
     if (stage === 'initial') {
-      // First user message - AI should generate 5 follow-up questions
-      response = await chat.sendMessage(
-        `User is asking about prebuilt houses: "${userMessage}". Generate 5 specific questions to understand their needs better. Format as a numbered list.`
-      );
-    } else if (stage === 'questions_answered') {
-      // User has answered the questions - AI should recommend houses
-      response = await chat.sendMessage(
-        `Based on our conversation and the user's answers: "${userMessage}", recommend the most suitable house from our database. Explain why it matches their needs.`
-      );
+      // Generate personalized questions based on user's initial query
+      const questionsPrompt = `
+Anda adalah asisten AI untuk platform SiapHuni yang membantu calon pembeli rumah menemukan rumah impian mereka.
+
+User bertanya tentang rumah siap huni: "${userMessage}"
+
+Buat 5 pertanyaan spesifik untuk memahami kebutuhan mereka dengan lebih baik. Pertanyaan harus personal dan relevan dengan query awal mereka.
+
+Format setiap pertanyaan sebagai objek JSON dengan field berikut:
+- id: string (contoh: "style-1", "budget-1", "space-1", "location-1", "features-1")
+- question: string (pertanyaan dalam Bahasa Indonesia)
+- type: "options" atau "text"
+- options: array of string (hanya untuk type "options")
+
+Pertanyaan harus mencakup:
+1. Gaya dan desain rumah (contoh opsi: Modern, Minimalis, Klasik, Kontemporer)
+2. Budget (contoh opsi: <500jt, 500jt-1M, 1M-2M, >2M)
+3. Kebutuhan ruang (contoh opsi: 2-3 kamar, 4-5 kamar, >5 kamar)
+4. Lokasi preferensi (contoh opsi: Jakarta, Bandung, Surabaya, Bali)
+5. Fitur khusus (contoh opsi: Kolam renang, Taman luas, Smart home, Parkir mobil)
+
+Format respons sebagai array JSON, tanpa teks atau format tambahan.
+`;
+
+      response = await chat.sendMessage(questionsPrompt);
+      const aiResponse = response.response.text();
+      
+      // Clean the response to ensure it's valid JSON
+      const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+      
+      return NextResponse.json({ 
+        response: cleanResponse,
+      });
+    } else if (stage === 'analysis') {
+      // Generate house recommendations based on collected answers
+      const analysisPrompt = `
+Anda adalah asisten AI untuk platform SiapHuni yang membantu calon pembeli rumah menemukan rumah impian mereka.
+
+Berdasarkan preferensi user:
+${JSON.stringify(answers, null, 2)}
+
+Analisis database rumah kami dan berikan analisis detail. Format respons sebagai objek JSON dengan field berikut:
+
+{
+  "summary": "Ringkasan singkat analisis kebutuhan user",
+  "recommendations": [
+    "Rekomendasi 1 tentang gaya rumah",
+    "Rekomendasi 2 tentang budget",
+    "Rekomendasi 3 tentang lokasi",
+    "Rekomendasi 4 tentang fitur khusus"
+  ],
+  "matchingHouses": [
+    {
+      "id": "string",
+      "name": "Nama rumah",
+      "matchScore": number (0-1),
+      "details": "Penjelasan detail mengapa rumah ini cocok",
+      "highlights": [
+        "Poin keunggulan 1",
+        "Poin keunggulan 2",
+        "Poin keunggulan 3"
+      ],
+      "price": "Format harga (contoh: 750 juta)",
+      "location": "Lokasi rumah",
+      "features": [
+        "Fitur 1",
+        "Fitur 2",
+        "Fitur 3"
+      ]
+    }
+  ]
+}
+
+Rumah yang tersedia:
+${JSON.stringify(houses, null, 2)}
+
+Berikan respons dalam format JSON, tanpa teks atau format tambahan.
+`;
+
+      response = await chat.sendMessage(analysisPrompt);
+      const aiResponse = response.response.text();
+      
+      // Clean the response to ensure it's valid JSON
+      const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+      
+      return NextResponse.json({ 
+        response: cleanResponse,
+      });
     } else {
       // General chat
-      response = await chat.sendMessage(userMessage);
+      const chatPrompt = `
+Anda adalah asisten AI untuk platform SiapHuni yang membantu calon pembeli rumah menemukan rumah impian mereka.
+
+User: "${userMessage}"
+
+Jawab pertanyaan user dengan ramah dan informatif dalam Bahasa Indonesia. Fokus pada:
+1. Memberikan informasi yang akurat tentang rumah siap huni
+2. Menjelaskan proses pembelian rumah
+3. Memberikan saran berdasarkan kebutuhan user
+4. Menggunakan bahasa yang sopan dan profesional
+
+Jawab dengan format teks biasa, tanpa JSON atau format khusus.
+`;
+
+      response = await chat.sendMessage(chatPrompt);
+      const aiResponse = response.response.text();
+      
+      return NextResponse.json({ 
+        response: aiResponse,
+      });
     }
-    
-    console.log('Received response from Gemini');
-    const aiResponse = response.response.text();
-    
-    return NextResponse.json({ 
-      response: aiResponse,
-    });
   } catch (error) {
     console.error('Error in AI chat API:', error);
     
-    // Enhanced error logging
-    if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    
-    // Check if API key is available
-    const apiKeyStatus = process.env.GEMINI_API_KEY 
-      ? 'API key is set' 
-      : 'API key is NOT set';
-    console.error('API key status:', apiKeyStatus);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return NextResponse.json(
-      { error: 'Failed to process your request', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Gagal memproses permintaan Anda', 
+        details: errorMessage,
+        apiKeyStatus: apiKey ? 'API key is set' : 'API key is NOT set'
+      },
       { status: 500 }
     );
   }
@@ -143,16 +226,6 @@ async function getHouseData(): Promise<HouseData[]> {
     console.error('Error fetching house data:', error);
     return [];
   }
-}
-
-// Function to format chat history for Gemini
-function formatChatHistory(chatHistory: ChatMessage[]) {
-  if (!chatHistory || !Array.isArray(chatHistory)) return [];
-  
-  return chatHistory.map(msg => ({
-    role: 'user',
-    parts: [{ text: msg.content }],
-  }));
 }
 
 // System prompt with house data

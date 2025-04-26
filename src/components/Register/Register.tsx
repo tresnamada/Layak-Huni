@@ -3,37 +3,40 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { loginUser, loginWithGoogle } from '../services/authService';
+import { registerUser, loginWithGoogle } from '../../services/authService';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const LoginPage = () => {
+const Register = () => {
   const router = useRouter();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(null);
+    setIsSubmitting(true);
 
     try {
-      const { user, error } = await loginUser(email, password);
-      if (error) {
-        setError(error);
-      } else if (user) {
-        router.push('/');
+      const { success, error } = await registerUser(email, password);
+      if (success) {
+        router.push('/complete-profile');
+      } else {
+        setError(error || 'Failed to register');
       }
     } catch (err) {
-      setError('Terjadi kesalahan yang tidak terduga');
+      setError('An unexpected error occurred');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleRegister = async () => {
     setError('');
     setLoading(true);
 
@@ -97,7 +100,7 @@ const LoginPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            Selamat Datang
+            Buat Akun Baru
           </motion.h2>
           <motion.p 
             className="text-gray-300"
@@ -105,7 +108,7 @@ const LoginPage = () => {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Masuk ke akun Anda
+            Mulai perjalanan Anda bersama kami
           </motion.p>
         </div>
 
@@ -120,10 +123,50 @@ const LoginPage = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <label htmlFor="firstName" className="block text-gray-300 mb-2">
+                Nama Depan
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-white transition-all duration-300"
+                placeholder="Nama depan"
+                required
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <label htmlFor="lastName" className="block text-gray-300 mb-2">
+                Nama Belakang
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-white transition-all duration-300"
+                placeholder="Nama belakang"
+                required
+              />
+            </motion.div>
+          </div>
+
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.6 }}
           >
             <label htmlFor="email" className="block text-gray-300 mb-2">
               Email
@@ -149,7 +192,7 @@ const LoginPage = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.7 }}
           >
             <label htmlFor="password" className="block text-gray-300 mb-2">
               Kata Sandi
@@ -161,7 +204,7 @@ const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-white transition-all duration-300"
-                placeholder="Masukkan kata sandi Anda"
+                placeholder="Buat kata sandi"
                 required
               />
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
@@ -190,9 +233,9 @@ const LoginPage = () => {
             ) : (
               <>
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span>Masuk</span>
+                <span>Daftar Sekarang</span>
               </>
             )}
           </motion.button>
@@ -204,12 +247,12 @@ const LoginPage = () => {
               <div className="w-full border-t border-gray-700"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-[#1a1f2c] text-gray-400">Atau masuk dengan</span>
+              <span className="px-2 bg-[#1a1f2c] text-gray-400">Atau daftar dengan</span>
             </div>
           </div>
 
           <motion.button
-            onClick={handleGoogleLogin}
+            onClick={handleGoogleRegister}
             disabled={loading}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
@@ -221,7 +264,7 @@ const LoginPage = () => {
               width={20}
               height={20}
             />
-            <span>Masuk dengan Google</span>
+            <span>Daftar dengan Google</span>
           </motion.button>
         </div>
 
@@ -229,12 +272,12 @@ const LoginPage = () => {
           className="mt-6 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
+          transition={{ delay: 0.8 }}
         >
           <p className="text-sm text-gray-400">
-            Belum punya akun?{' '}
-            <Link href="/Register" className="text-blue-400 hover:text-blue-300 font-medium">
-              Daftar
+            Sudah punya akun?{' '}
+            <Link href="/Login" className="text-blue-400 hover:text-blue-300 font-medium">
+              Masuk
             </Link>
           </p>
         </motion.div>
@@ -243,4 +286,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default Register;
