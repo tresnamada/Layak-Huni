@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Home, Search, Users, User, Menu } from "lucide-react";
+import { Home, Search, Users, User, Menu, Settings } from "lucide-react";
 import { getAuth } from 'firebase/auth';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { isProfileComplete } from '@/services/profileService';
 import { useRouter, usePathname } from 'next/navigation';
 import { app } from '@/firebase';
+import { useAdmin } from '@/hooks/useAdmin';
 
 // Initialize Firebase Auth
 const auth = getAuth(app);
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { isAdminUser } = useAdmin();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
@@ -41,12 +43,24 @@ export default function Navbar() {
     }
   };
 
-  const navigationItems = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/sihuni", label: "Si Huni", icon: Search },
-    { href: "/prebuild", label: "PreBuild", icon: Menu },
-    { href: "/komunitas", label: "Komunitas", icon: Users },
-  ];
+  // Get navigation items, including Admin if user is admin
+  const getNavigationItems = () => {
+    const items = [
+      { href: "/", label: "Home", icon: Home },
+      { href: "/sihuni", label: "Si Huni", icon: Search },
+      { href: "/prebuild", label: "PreBuild", icon: Menu },
+      { href: "/komunitas", label: "Komunitas", icon: Users },
+    ];
+
+    // Add Admin link for admin users
+    if (isAdminUser) {
+      items.push({ href: "/Admin", label: "Admin", icon: Settings });
+    }
+
+    return items;
+  };
+
+  const navigationItems = getNavigationItems();
 
   const AuthButtons = () => (
     <div className="flex items-center gap-2">
