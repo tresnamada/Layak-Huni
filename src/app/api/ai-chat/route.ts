@@ -11,14 +11,17 @@ interface ChatMessage {
 
 interface HouseData {
   id: string;
-  durasi?: number;
-  harga?: number;
-  luas?: number;
-  material?: string;
-  tipe?: string;
-  lokasi?: string;
-  fasilitas?: string[];
-  [key: string]: string | number | string[] | undefined;
+  name: string;
+  durasi: number;
+  harga: number;
+  luas: number;
+  material: string;
+  tipe: string;
+  description: string;
+  imageUrl: string;
+  createdAt?: any;
+  createdBy?: string;
+  [key: string]: string | number | string[] | any;
 }
 
 // Available Gemini models to try
@@ -75,6 +78,8 @@ Pertanyaan harus mencakup:
 4. Lokasi preferensi (contoh opsi: Jakarta, Bandung, Surabaya, Bali)
 5. Fitur khusus (contoh opsi: Kolam renang, Taman luas, Smart home, Parkir mobil)
 
+Pastinya anda boleh improvisasi opsi anda sendiri. Jika user bertanya atau meminta sesuatu yang sudah ada di opsi, maka anda boleh menambahkan opsi baru. Seperti contoh pertanyaan user: "Saya ingin rumah yang minimalis di budget sekitar 500jt-2M." Maka anda boleh menambahkan opsi lainnya untuk memudahkan fase analisis nantinya. Tetap respon dengan format JSON yang benar.
+
 Format respons sebagai array JSON, tanpa teks atau format tambahan.
 `;
 
@@ -117,20 +122,26 @@ Analisis database rumah kami dan berikan analisis detail. Format respons sebagai
         "Poin keunggulan 3"
       ],
       "price": "Format harga (contoh: 750 juta)",
-      "location": "Lokasi rumah",
-      "features": [
-        "Fitur 1",
-        "Fitur 2",
-        "Fitur 3"
-      ]
+      "area": "Luas bangunan (contoh: 150 m²)",
+      "material": "Material utama (contoh: Beton)",
+      "constructionTime": "Durasi pembangunan (contoh: 30 hari)"
     }
   ]
 }
 
 Rumah yang tersedia:
-${JSON.stringify(houses, null, 2)}
+${houses.map(house => ({
+  id: house.id,
+  name: house.name,
+  price: house.harga,
+  area: house.luas,
+  type: house.tipe,
+  material: house.material,
+  constructionTime: house.durasi,
+  description: house.description
+})).map(h => JSON.stringify(h)).join('\n')}
 
-Berikan respons dalam format JSON, tanpa teks atau format tambahan.
+Cocokkan dengan kebutuhan user dan berikan respons dalam format JSON, tanpa teks atau format tambahan.
 `;
 
       response = await chat.sendMessage(analysisPrompt);
@@ -210,17 +221,21 @@ async function initializeWorkingModel(houses: HouseData[]): Promise<GenerativeMo
 // Function to get house data from Firestore
 async function getHouseData(): Promise<HouseData[]> {
   try {
-    const housesCollection = collection(db, 'test');
+    const housesCollection = collection(db, 'houses');
     const housesSnapshot = await getDocs(housesCollection);
     
     const houses: HouseData[] = [];
     housesSnapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
-      houses.push({
+      const houseData = {
         id: doc.id,
         ...doc.data()
-      } as HouseData);
+      } as HouseData;
+      
+      // Ensure required fields are present
+      houses.push(houseData);
     });
     
+    console.log(`Fetched ${houses.length} houses from Firestore`);
     return houses;
   } catch (error) {
     console.error('Error fetching house data:', error);
@@ -230,24 +245,35 @@ async function getHouseData(): Promise<HouseData[]> {
 
 // System prompt with house data
 function getSystemPrompt(houses: HouseData[]) {
+  const houseSummary = houses.map(house => {
+    return {
+      id: house.id,
+      name: house.name || 'Rumah Tanpa Nama',
+      price: `${house.harga} juta`,
+      area: `${house.luas} m²`,
+      type: house.tipe,
+      material: house.material,
+      constructionTime: `${house.durasi} hari`,
+      description: house.description
+    };
+  });
+
   return `
 You are SiHuni, an AI assistant for a prebuilt house consultation app in Indonesia.
 Your job is to help users find the perfect prebuilt house that matches their needs and preferences.
 
 Here is the current database of houses:
-${JSON.stringify(houses, null, 2)}
+${JSON.stringify(houseSummary, null, 2)}
 
 Follow these guidelines:
 1. Be friendly, helpful, and professional.
 2. Speak in Bahasa Indonesia, using proper and respectful language.
 3. Analyze user needs carefully before making recommendations.
-4. When recommending houses, include all relevant details (durasi, harga, luas, material, tipe).
+4. When recommending houses, include all relevant details (name, harga, luas, material, tipe, durasi).
 5. Format prices as "X juta" (e.g., "450 juta").
-6. Format areas as "X km²" (e.g., "7 km²").
+6. Format areas as "X m²" (e.g., "150 m²").
 7. If the user's needs don't match any house perfectly, suggest the closest option and explain why.
 8. Only recommend houses that exist in the database.
 9. If asked about houses not in the database, politely explain that they are not currently available.
-
-Your name is SiHuni and you are an expert on prebuilt houses in Indonesia.
 `;
 } 
