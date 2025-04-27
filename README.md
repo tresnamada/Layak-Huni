@@ -74,3 +74,34 @@ Jika Anda mengalami masalah dengan SiHuni AI, coba langkah-langkah berikut:
 3. Anda mungkin perlu mengaktifkan API Gemini di Google Cloud Console
 
 Jika masalah masih berlanjut, periksa log server dan browser untuk pesan error yang lebih detail.
+
+## Admin Functionality
+
+SiapHuni includes an admin panel that allows privileged users to manage the application. Here's how the admin system works:
+
+### Admin Pages
+
+- **Admin Dashboard** (`/Admin`): The main admin panel with access to various management tools
+- **User Management** (`/Admin/Users`): Interface for managing users and assigning admin privileges
+
+### Admin Access Control
+
+A user can be assigned admin privileges in one of two ways:
+
+1. Setting the `isAdmin` flag to `true` in the user's profile document in Firestore
+2. Adding the user's ID to the `admins` collection in Firestore with `active: true`
+
+The authentication flow checks both methods to determine if a user has admin privileges.
+
+### Admin Features
+
+- View all registered users
+- Assign and revoke admin privileges
+- Redirect non-admin users away from admin pages
+- Admin link in navigation bar (only visible to admin users)
+
+### Implementation Details
+
+- Role-based access control (RBAC) using Firestore
+- Admin status check using custom hooks
+- Secure routes with client-side authentication checks
