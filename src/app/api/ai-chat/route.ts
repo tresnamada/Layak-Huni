@@ -34,6 +34,32 @@ if (!apiKey) {
 }
 const genAI = new GoogleGenerativeAI(apiKey);
 
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      if (error instanceof Error && error.message.includes('503')) {
+        // Exponential backoff
+        const delay = initialDelay * Math.pow(2, i);
+        console.log(`Retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function POST(request: Request) {
   try {
     const { userMessage, answers, stage } = await request.json();
@@ -83,15 +109,26 @@ Pastinya anda boleh improvisasi opsi anda sendiri. Jika user bertanya atau memin
 Format respons sebagai array JSON, tanpa teks atau format tambahan.
 `;
 
-      response = await chat.sendMessage(questionsPrompt);
-      const aiResponse = response.response.text();
-      
-      // Clean the response to ensure it's valid JSON
-      const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
-      
-      return NextResponse.json({ 
-        response: cleanResponse,
-      });
+      try {
+        response = await retryWithBackoff(() => chat.sendMessage(questionsPrompt));
+        const aiResponse = response.response.text();
+        
+        // Clean the response to ensure it's valid JSON
+        const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+        
+        return NextResponse.json({ 
+          response: cleanResponse,
+        });
+      } catch (error) {
+        console.error('Error generating questions:', error);
+        return NextResponse.json(
+          { 
+            error: 'Gagal memproses pertanyaan. Silakan coba lagi dalam beberapa saat.',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          },
+          { status: 503 }
+        );
+      }
     } else if (stage === 'analysis') {
       // Generate house recommendations based on collected answers
       const analysisPrompt = `
@@ -126,7 +163,25 @@ Analisis database rumah kami dan berikan analisis detail. Format respons sebagai
       "material": "Material utama (contoh: Beton)",
       "constructionTime": "Durasi pembangunan (contoh: 30 hari)"
     }
-  ]
+  ],
+  "advice": {
+    "title": "Saran untuk Rumah Impian Anda",
+    "content": "Penjelasan detail tentang saran yang diberikan",
+    "suggestions": [
+      "Saran 1 untuk meningkatkan kenyamanan rumah",
+      "Saran 2 untuk mengoptimalkan budget",
+      "Saran 3 untuk memilih lokasi yang tepat"
+    ]
+  },
+  "customDesignSuggestion": {
+    "title": "Desain Custom untuk Rumah Impian Anda",
+    "description": "Penjelasan tentang mengapa desain custom bisa menjadi solusi terbaik",
+    "benefits": [
+      "Manfaat 1 dari desain custom",
+      "Manfaat 2 dari desain custom",
+      "Manfaat 3 dari desain custom"
+    ]
+  }
 }
 
 Rumah yang tersedia:
@@ -140,6 +195,12 @@ ${houses.map(house => ({
   constructionTime: house.durasi,
   description: house.description
 })).map(h => JSON.stringify(h)).join('\n')}
+
+Pertimbangkan hal berikut dalam analisis:
+1. Jika tidak ada rumah yang cocok dengan kriteria user, berikan saran untuk desain custom
+2. Berikan rekomendasi yang realistis dan sesuai dengan budget
+3. Sertakan saran untuk meningkatkan kenyamanan dan nilai properti
+4. Jika user tidak puas dengan opsi yang ada, arahkan ke desain custom
 
 Cocokkan dengan kebutuhan user dan berikan respons dalam format JSON, tanpa teks atau format tambahan.
 `;

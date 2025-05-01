@@ -48,7 +48,7 @@ export default function Navbar() {
     const items = [
       { href: "/", label: "Home", icon: Home },
       { href: "/sihuni", label: "Si Huni", icon: Search },
-      { href: "/prebuild", label: "PreBuild", icon: Menu },
+      { href: "/Marketplace", label: "PreBuild", icon: Menu },
       { href: "/komunitas", label: "Komunitas", icon: Users },
     ];
 
