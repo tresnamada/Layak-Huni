@@ -111,7 +111,7 @@ export default function ProfilePage() {
       if (user) {
         const isComplete = await isProfileComplete(user.uid);
         if (!isComplete) {
-          router.push('/complete-profile');
+          router.push('/CompleteProfile');
           return;
         }
 

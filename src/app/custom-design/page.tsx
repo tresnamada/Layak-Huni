@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiHome, FiDollarSign, FiMapPin, FiLayers, FiCheck, FiArrowRight, FiMessageSquare, FiLoader, FiDownload } from 'react-icons/fi';
+import { FiHome, FiDollarSign, FiMapPin, FiLayers, FiCheck, FiArrowRight, FiMessageSquare, FiLoader, FiDownload, FiSave, FiList } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import { saveGeneratedDesign, getUserGeneratedDesigns } from '@/services/designService';
 
 interface DesignStep {
   id: string;
@@ -74,101 +77,58 @@ interface DesignFeature {
   compatibleStyles: string[];
 }
 
-const designFeatures: DesignFeature[] = [
-  {
-    id: 'open-plan',
-    name: 'Open Plan Living',
-    description: 'Ruang terbuka yang menghubungkan area dapur, ruang makan, dan ruang keluarga',
-    category: 'interior',
-    compatibleStyles: ['modern-minimalist', 'tropical-contemporary', 'japanese-minimalist']
-  },
-  {
-    id: 'indoor-outdoor',
-    name: 'Indoor-Outdoor Living',
-    description: 'Konsep ruang yang menyatu dengan alam melalui teras dan taman',
-    category: 'exterior',
-    compatibleStyles: ['tropical-contemporary', 'japanese-minimalist']
-  },
-  {
-    id: 'natural-light',
-    name: 'Pencahayaan Alami',
-    description: 'Desain yang mengoptimalkan pencahayaan alami melalui jendela besar dan skylight',
-    category: 'interior',
-    compatibleStyles: ['modern-minimalist', 'tropical-contemporary', 'japanese-minimalist']
-  },
-  {
-    id: 'solar-panel',
-    name: 'Panel Surya',
-    description: 'Sistem panel surya untuk energi terbarukan',
-    category: 'sustainability',
-    compatibleStyles: ['modern-minimalist', 'tropical-contemporary']
-  },
-  {
-    id: 'rainwater',
-    name: 'Sistem Air Hujan',
-    description: 'Pengumpulan dan penggunaan air hujan untuk kebutuhan rumah',
-    category: 'sustainability',
-    compatibleStyles: ['tropical-contemporary', 'japanese-minimalist']
-  },
-  {
-    id: 'smart-home',
-    name: 'Smart Home System',
-    description: 'Sistem otomatisasi rumah untuk kenyamanan dan efisiensi',
-    category: 'interior',
-    compatibleStyles: ['modern-minimalist']
-  }
-];
-
 const locationOptions: LocationOption[] = [
   {
-    id: 'urban',
-    name: 'Perkotaan',
-    description: 'Lahan di area perkotaan dengan akses infrastruktur yang baik',
-    terrainType: 'Datar',
-    landType: 'Perkotaan',
+    id: 'mendatar',
+    name: 'Mendatar',
+    description: 'Lahan dengan permukaan yang relatif datar dan rata',
+    terrainType: 'Mendatar',
+    landType: 'Datar',
     considerations: [
       'Drainase yang baik',
-      'Akses jalan yang mudah',
-      'Ketersediaan utilitas (listrik, air, gas)',
-      'Peraturan zonasi perkotaan',
-      'Tingkat kebisingan',
-      'Kepadatan penduduk'
+      'Pengelolaan air hujan',
+      'Fondasi standar',
+      'Kemudahan konstruksi',
+      'Biaya konstruksi lebih rendah'
     ],
-    suitability: 'Sangat cocok untuk berbagai jenis rumah'
+    suitability: 'Cocok untuk berbagai jenis desain rumah'
   },
   {
-    id: 'suburban',
-    name: 'Pinggiran Kota',
-    description: 'Lahan di area pinggiran kota dengan keseimbangan antara aksesibilitas dan kenyamanan',
-    terrainType: 'Datar/Sedikit Miring',
-    landType: 'Pinggiran Kota',
+    id: 'landai',
+    name: 'Landai',
+    description: 'Lahan dengan kemiringan gradual',
+    terrainType: 'Landai',
+    landType: 'Miring',
     considerations: [
-      'Akses transportasi publik',
-      'Ketersediaan fasilitas umum',
-      'Potensi pengembangan area',
-      'Kualitas udara lebih baik',
-      'Tingkat kebisingan lebih rendah'
+      'Sistem drainase khusus',
+      'Fondasi bertingkat',
+      'Potensi pemandangan lebih baik',
+      'Pencegahan erosi tanah',
+      'Desain rumah bertingkat'
     ],
-    suitability: 'Cocok untuk rumah keluarga dengan ruang terbuka'
+    suitability: 'Cocok untuk rumah split-level atau bertingkat'
   },
   {
-    id: 'rural',
-    name: 'Pedesaan',
-    description: 'Lahan di area pedesaan dengan suasana alami dan tenang',
-    terrainType: 'Beragam',
-    landType: 'Pedesaan',
+    id: 'bergerak',
+    name: 'Bergerak',
+    description: 'Lahan dengan tanah yang tidak stabil atau bergerak',
+    terrainType: 'Bergerak',
+    landType: 'Dinamis',
     considerations: [
-      'Akses jalan mungkin terbatas',
-      'Ketersediaan utilitas perlu diperiksa',
-      'Potensi pemandangan alam',
-      'Kualitas udara sangat baik',
-      'Tingkat kebisingan minimal'
+      'Fondasi khusus yang dalam',
+      'Struktur yang fleksibel',
+      'Penanganan tanah sebelum konstruksi',
+      'Stabilisasi tanah',
+      'Biaya konstruksi lebih tinggi'
     ],
-    suitability: 'Cocok untuk rumah dengan desain yang mengikuti alam'
+    suitability: 'Memerlukan desain khusus dengan fondasi yang kuat'
   }
 ];
 
 export default function CustomDesignPage() {
+  const { user, loading } = useAuth({ redirectToLogin: true });
+  const router = useRouter();
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedDesign, setSelectedDesign] = useState<AIDesignSuggestion | null>(null);
   const [userDescription, setUserDescription] = useState('');
@@ -189,6 +149,8 @@ export default function CustomDesignPage() {
     features: string[];
     considerations: string[];
   } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState('');
 
   const designSteps: DesignStep[] = [
     {
@@ -229,6 +191,12 @@ export default function CustomDesignPage() {
       return;
     }
 
+    if (!user) {
+      alert('Anda harus login untuk menggunakan fitur ini');
+      router.push('/Login');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const response = await fetch('/api/ai-chat', {
@@ -237,7 +205,8 @@ export default function CustomDesignPage() {
         body: JSON.stringify({
           userMessage: userDescription,
           stage: 'design',
-          type: 'suggestions'
+          type: 'suggestions',
+          userId: user.uid
         }),
       });
 
@@ -248,6 +217,12 @@ export default function CustomDesignPage() {
       const data = await response.json();
       
       if (!data.success) {
+        // Handle authentication error
+        if (data.requiresAuth) {
+          alert('Anda harus login untuk menggunakan fitur ini');
+          router.push('/Login');
+          return;
+        }
         throw new Error(data.error || 'Gagal menghasilkan desain');
       }
 
@@ -270,6 +245,7 @@ export default function CustomDesignPage() {
         }));
 
         setAiSuggestions(validatedSuggestions);
+        // After generating house styles, move to the next step
         setCurrentStep(1);
       } catch (parseError) {
         console.error('Error parsing suggestions:', parseError);
@@ -284,8 +260,36 @@ export default function CustomDesignPage() {
   };
 
   const handleNextStep = () => {
-    if (currentStep < designSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
+    if (currentStep === 0) {
+      // From description to style selection - handled by handleGenerateDesign
+    } else if (currentStep === 1) {
+      // From style selection to feature selection
+      if (!selectedDesign) {
+        alert('Silakan pilih gaya rumah terlebih dahulu');
+        return;
+      }
+      generateFeatures();
+    } else if (currentStep === 2) {
+      // From feature selection to budget input
+      if (selectedFeatures.length === 0) {
+        alert('Silakan pilih minimal satu fitur');
+        return;
+      }
+      setCurrentStep(3);
+    } else if (currentStep === 3) {
+      // From budget input to terrain selection
+      if (!selectedBudget && !budgetInput) {
+        alert('Silakan masukkan budget Anda');
+        return;
+      }
+      setCurrentStep(4);
+    } else if (currentStep === 4) {
+      // From terrain selection to final result
+      if (!selectedLocation) {
+        alert('Silakan pilih jenis medan tanah');
+        return;
+      }
+      handleComplete();
     }
   };
 
@@ -348,7 +352,10 @@ export default function CustomDesignPage() {
   };
 
   const handleComplete = () => {
-    if (selectedDesign && selectedLocation && selectedBudget) {
+    // Check if all required selections have been made
+    if (selectedDesign && selectedLocation && (selectedBudget || budgetInput) && selectedFeatures.length > 0) {
+      const budget = selectedBudget?.range || budgetInput;
+      
       const result: FinalResult = {
         design: {
           name: selectedDesign.name,
@@ -360,7 +367,7 @@ export default function CustomDesignPage() {
           terrainType: selectedLocation.terrainType,
           considerations: selectedLocation.considerations
         },
-        budget: selectedBudget.range,
+        budget: budget,
         features: selectedFeatures.map(f => f.name),
         recommendations: [
           'Gunakan material yang sesuai dengan kondisi lahan',
@@ -376,10 +383,18 @@ export default function CustomDesignPage() {
           'Persiapan dokumen kontrak'
         ]
       };
+      
       setFinalResult(result);
       setCurrentStep(5);
     } else {
-      alert('Silakan lengkapi semua pilihan sebelum menyelesaikan');
+      // Identify which selections are missing
+      const missing = [];
+      if (!selectedDesign) missing.push('gaya rumah');
+      if (!selectedLocation) missing.push('jenis medan tanah');
+      if (!selectedBudget && !budgetInput) missing.push('budget');
+      if (selectedFeatures.length === 0) missing.push('fitur');
+      
+      alert(`Silakan lengkapi semua pilihan berikut sebelum menyelesaikan: ${missing.join(', ')}`);
     }
   };
 
@@ -428,6 +443,200 @@ export default function CustomDesignPage() {
       alert(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveDesign = async (design: AIDesignSuggestion) => {
+    if (!user) {
+      alert('Anda harus login untuk menyimpan desain');
+      router.push('/Login');
+      return;
+    }
+
+    setIsSaving(true);
+    setSavedMessage('');
+    
+    try {
+      const result = await saveGeneratedDesign(user.uid, {
+        ...design,
+        prompt: userDescription
+      });
+      
+      if (result.success) {
+        setSavedMessage('Desain berhasil disimpan!');
+        setTimeout(() => {
+          setSavedMessage('');
+        }, 3000);
+      } else {
+        throw new Error(result.error || 'Gagal menyimpan desain');
+      }
+    } catch (error) {
+      console.error('Error saving design:', error);
+      alert(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const goToSavedDesigns = () => {
+    router.push('/Profile/saved-designs');
+  };
+
+  // Update the generateFeatures function to process AI-generated features
+  const generateFeatures = async () => {
+    if (!selectedDesign) {
+      alert('Silakan pilih gaya rumah terlebih dahulu');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userMessage: `Berdasarkan gaya ${selectedDesign.style} dengan nama ${selectedDesign.name}, berikan fitur-fitur yang sesuai`,
+          stage: 'features',
+          type: 'suggestions',
+          userId: user?.uid
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal menghubungi server. Silakan coba lagi.');
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Gagal menghasilkan fitur');
+      }
+
+      try {
+        const parsedResponse = JSON.parse(data.response);
+        if (!parsedResponse.features || !Array.isArray(parsedResponse.features)) {
+          throw new Error('Format respons fitur tidak valid');
+        }
+
+        // Convert AI-generated features to the app's DesignFeature format
+        const aiFeatures = parsedResponse.features.map((feature: any) => ({
+          id: feature.id || `feature-${Math.random().toString(36).substr(2, 9)}`,
+          name: feature.name,
+          description: feature.description,
+          category: feature.category as 'exterior' | 'interior' | 'material' | 'sustainability',
+          compatibleStyles: feature.compatibility || [selectedDesign.style],
+          estimatedPrice: feature.estimatedPrice
+        }));
+
+        // Replace static features with AI-generated ones for this session
+        setSelectedFeatures([]); // Reset any previously selected features
+        setDesignFeatures(aiFeatures); // Need to add this state variable
+        
+        // Move to the features selection step
+        setCurrentStep(2);
+      } catch (parseError) {
+        console.error('Error parsing features:', parseError);
+        throw new Error('Gagal memproses fitur yang dihasilkan');
+      }
+    } catch (error) {
+      console.error('Error generating features:', error);
+      alert(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Add a new state variable for dynamic design features
+  const [designFeatures, setDesignFeatures] = useState<DesignFeature[]>([
+    // Initial static features that will be replaced with AI-generated ones
+    {
+      id: 'open-plan',
+      name: 'Open Plan Living',
+      description: 'Ruang terbuka yang menghubungkan area dapur, ruang makan, dan ruang keluarga',
+      category: 'interior',
+      compatibleStyles: ['modern-minimalist', 'tropical-contemporary', 'japanese-minimalist']
+    },
+    {
+      id: 'indoor-outdoor',
+      name: 'Indoor-Outdoor Living',
+      description: 'Konsep ruang yang menyatu dengan alam melalui teras dan taman',
+      category: 'exterior',
+      compatibleStyles: ['tropical-contemporary', 'japanese-minimalist']
+    },
+    {
+      id: 'natural-light',
+      name: 'Pencahayaan Alami',
+      description: 'Desain yang mengoptimalkan pencahayaan alami melalui jendela besar dan skylight',
+      category: 'interior',
+      compatibleStyles: ['modern-minimalist', 'tropical-contemporary', 'japanese-minimalist']
+    },
+    {
+      id: 'solar-panel',
+      name: 'Panel Surya',
+      description: 'Sistem panel surya untuk energi terbarukan',
+      category: 'sustainability',
+      compatibleStyles: ['modern-minimalist', 'tropical-contemporary']
+    },
+    {
+      id: 'rainwater',
+      name: 'Sistem Air Hujan',
+      description: 'Pengumpulan dan penggunaan air hujan untuk kebutuhan rumah',
+      category: 'sustainability',
+      compatibleStyles: ['tropical-contemporary', 'japanese-minimalist']
+    },
+    {
+      id: 'smart-home',
+      name: 'Smart Home System',
+      description: 'Sistem otomatisasi rumah untuk kenyamanan dan efisiensi',
+      category: 'interior',
+      compatibleStyles: ['modern-minimalist']
+    }
+  ]);
+
+  const handleDownloadDesign = async () => {
+    if (!user) {
+      alert('Anda harus login untuk menyimpan desain');
+      router.push('/Login');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (!finalResult.design) {
+        throw new Error('Tidak ada desain yang dapat disimpan');
+      }
+
+      // Prepare the design data
+      const designData = {
+        name: finalResult.design.name,
+        description: finalResult.design.description,
+        style: finalResult.design.style,
+        keyFeatures: finalResult.features,
+        estimatedPrice: finalResult.budget || 'Tidak ditentukan',
+        characteristics: {
+          exterior: finalResult.location?.considerations?.filter((_, i) => i % 2 === 0) || [],
+          interior: finalResult.location?.considerations?.filter((_, i) => i % 2 === 1) || [],
+          materials: ['Sesuai dengan desain yang dipilih'],
+          sustainability: ['Sesuai dengan desain yang dipilih']
+        },
+        suitability: [finalResult.location?.name || 'Lokasi tidak ditentukan'],
+        prompt: userDescription
+      };
+
+      const result = await saveGeneratedDesign(user.uid, designData);
+      
+      if (result.success) {
+        alert('Desain berhasil disimpan!');
+        // Redirect to the saved designs page
+        router.push('/Profile/saved-designs');
+      } else {
+        throw new Error(result.error || 'Gagal menyimpan desain');
+      }
+    } catch (error) {
+      console.error('Error saving design:', error);
+      alert(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -909,16 +1118,22 @@ export default function CustomDesignPage() {
                   >
                     Mulai Ulang
                   </button>
-                  <button
-                    onClick={() => {
-                      // Handle download or save the design
-                      alert('Desain telah disimpan!');
-                    }}
-                    className="px-6 py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-colors flex items-center"
-                  >
-                    <FiDownload className="mr-2" />
-                    Unduh Desain
-                  </button>
+                  <div className="flex space-x-4">
+                    <button
+                      onClick={goToSavedDesigns}
+                      className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center"
+                    >
+                      <FiList className="mr-2" />
+                      Lihat Desain Tersimpan
+                    </button>
+                    <button
+                      onClick={handleDownloadDesign}
+                      className="px-6 py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-colors flex items-center"
+                    >
+                      <FiDownload className="mr-2" />
+                      Simpan Desain
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

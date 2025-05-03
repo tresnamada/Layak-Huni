@@ -25,7 +25,7 @@ const Register = () => {
     try {
       const { success, error } = await registerUser(email, password);
       if (success) {
-        router.push('/complete-profile');
+        router.push('/CompleteProfile');
       } else {
         setError(error || 'Failed to register');
       }
