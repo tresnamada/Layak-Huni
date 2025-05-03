@@ -94,9 +94,9 @@ export default function UserManagement() {
       }
 
       if (makeAdmin) {
-        await setUserAsAdmin(userId, currentUser.uid);
+        await setUserAsAdmin(userId);
       } else {
-        await removeUserAsAdmin(userId, currentUser.uid);
+        await removeUserAsAdmin(userId);
       }
 
       // Update the users list

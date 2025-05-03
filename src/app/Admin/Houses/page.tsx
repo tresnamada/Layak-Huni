@@ -1,225 +1,264 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import Image from 'next/image';
-import { PlusCircle, Trash2, PenSquare, Building, X, AlertTriangle, ChevronLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { getAllHouses, deleteHouse, HouseData } from '@/services/houseService';
+import Link from 'next/link';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Search, 
+  Filter, 
+  Home,
+  Ruler,
+  DollarSign,
+  Calendar,
+  Layers,
+  FileText,
+  Hammer,
+  ChevronLeft
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useRouter } from 'next/navigation';
 
-interface House {
-  id: string;
-  name: string;
-  harga: number;
-  luas: number;
-  tipe: string;
-  material: string;
-  durasi: number;
-  imageUrl: string;
-  createdAt: any;
-}
-
-export default function HousesPage() {
+export default function HousesManagement() {
   const router = useRouter();
   const { isAdminUser, loading: checkingAdmin } = useAdmin();
-  const [houses, setHouses] = useState<House[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [houses, setHouses] = useState<HouseData[]>([]);
   const [deleteHouseId, setDeleteHouseId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('all');
 
   // Redirect non-admin users
-  if (!checkingAdmin && !isAdminUser) {
-    router.push('/');
-    return null;
-  }
+  useEffect(() => {
+    if (!checkingAdmin && !isAdminUser) {
+      router.push('/');
+    }
+  }, [checkingAdmin, isAdminUser, router]);
 
   useEffect(() => {
-    async function loadHouses() {
+    const loadHouses = async () => {
       try {
-        setLoading(true);
-        setError(null);
         const housesData = await getAllHouses();
-        // Make sure all houses have an id
-        const validHousesData = housesData.filter(house => house.id !== undefined) as House[];
+        const validHousesData = housesData.filter(house => house.id !== undefined) as HouseData[];
         setHouses(validHousesData);
       } catch (err) {
         console.error('Error loading houses:', err);
-        setError('Gagal memuat data rumah. Silakan coba lagi nanti.');
-      } finally {
-        setLoading(false);
       }
-    }
+    };
 
-    if (isAdminUser) {
-      loadHouses();
-    }
-  }, [isAdminUser]);
+    loadHouses();
+  }, []);
 
-  const handleDeleteClick = (houseId: string) => {
-    setDeleteHouseId(houseId);
+  const handleDeleteClick = (id: string) => {
+    setDeleteHouseId(id);
   };
 
-  const confirmDelete = async () => {
+  const handleDeleteConfirm = async () => {
     if (!deleteHouseId) return;
-    
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
     try {
-      setIsDeleting(true);
-      setDeleteError(null);
       await deleteHouse(deleteHouseId);
-      
-      // Remove from local state
-      setHouses(prevHouses => prevHouses.filter(house => house.id !== deleteHouseId));
+      setHouses(houses.filter(house => house.id !== deleteHouseId));
       setDeleteHouseId(null);
     } catch (err) {
+      setDeleteError('Failed to delete house');
       console.error('Error deleting house:', err);
-      setDeleteError('Gagal menghapus rumah. Silakan coba lagi nanti.');
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const cancelDelete = () => {
+  const handleDeleteCancel = () => {
     setDeleteHouseId(null);
     setDeleteError(null);
   };
+
+  const filteredHouses = houses.filter(house => {
+    const matchesSearch = house.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         house.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === 'all' || house.tipe === selectedType;
+    return matchesSearch && matchesType;
+  });
 
   if (checkingAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F6F6EC]">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-amber-800 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memeriksa izin akses...</p>
+          <p className="mt-4 text-gray-600">Checking admin status...</p>
         </div>
       </div>
     );
   }
 
+  if (!isAdminUser) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-[#F6F6EC] pt-16 pb-24">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-[#F6F6EC] p-6">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <Link href="/Admin" className="inline-flex items-center text-amber-800 hover:text-amber-700">
-            <ChevronLeft size={20} />
-            <span>Kembali ke Panel Admin</span>
+            <ChevronLeft size={20} className="mr-2" />
+            Back to Admin Dashboard
           </Link>
         </div>
-      
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <h1 className="text-3xl font-bold text-amber-800">Manajemen Rumah Prebuilt</h1>
-          
+        
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">House Management</h1>
+            <p className="mt-2 text-gray-600">Manage and monitor pre-built houses</p>
+          </div>
           <Link href="/Admin/Houses/New">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-flex items-center px-5 py-2.5 bg-amber-800 text-white rounded-lg shadow-md hover:bg-amber-700 transition-colors"
-            >
-              <PlusCircle className="w-5 h-5 mr-2" />
-              <span>Tambah Rumah Baru</span>
-            </motion.div>
+            <button className="flex items-center px-4 py-2 bg-amber-800 text-white rounded-lg hover:bg-amber-700 transition-colors">
+              <Plus size={20} className="mr-2" />
+              Add New House
+            </button>
           </Link>
         </div>
 
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
-            <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">Terjadi Kesalahan</p>
-              <p className="text-sm">{error}</p>
+        {/* Filters and Search */}
+        <div className="bg-white rounded-xl p-4 mb-6 shadow-sm">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search houses..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="bg-white rounded-xl shadow-md p-8 flex items-center justify-center min-h-[300px]">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-amber-800 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="mt-4 text-gray-600">Memuat data rumah...</p>
-            </div>
-          </div>
-        ) : houses.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <Building className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">Belum Ada Rumah</h2>
-            <p className="text-gray-500 mb-6">Anda belum menambahkan rumah prebuilt. Tambahkan rumah pertama Anda sekarang.</p>
-            <Link href="/Admin/Houses/New">
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="inline-flex items-center px-5 py-2.5 bg-amber-800 text-white rounded-lg shadow-md hover:bg-amber-700 transition-colors"
+            <div className="flex gap-4">
+              <select
+                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
               >
-                <PlusCircle className="w-5 h-5 mr-2" />
-                <span>Tambah Rumah Baru</span>
-              </motion.div>
-            </Link>
+                <option value="all">All Types</option>
+                <option value="minimalis">Minimalis</option>
+                <option value="modern">Modern</option>
+                <option value="tradisional">Tradisional</option>
+              </select>
+              <button className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <Filter size={20} />
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rumah</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga (Juta)</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Luas (m²)</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Material</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durasi (Hari)</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {houses.map((house) => (
-                    <tr key={house.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-16 flex-shrink-0 mr-4 relative rounded overflow-hidden">
-                            <Image
-                              src={house.imageUrl.startsWith('data:') ? house.imageUrl : '/placeholder-house.jpg'}
-                              alt={house.name}
-                              fill
-                              className="object-cover"
-                              unoptimized={house.imageUrl.startsWith('data:')}
-                            />
-                          </div>
-                          <div className="text-sm font-medium text-gray-900">{house.name}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
-                        {house.tipe}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {house.harga.toLocaleString('id-ID')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {house.luas.toLocaleString('id-ID')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
-                        {house.material}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {house.durasi}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Link href={`/Admin/Houses/Edit/${house.id}`} className="text-amber-800 hover:text-amber-700">
-                            <PenSquare className="w-5 h-5" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(house.id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        </div>
+
+        {/* Houses Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredHouses.map((house) => (
+            <div key={house.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-6">
+                {/* House Image */}
+                <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
+                  <img
+                    src={house.imageUrl}
+                    alt={house.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* House Info */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">{house.name}</h3>
+                    <p className="text-gray-600 mt-1">{house.description}</p>
+                  </div>
+
+                  {/* Specifications */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center text-gray-600">
+                      <Home size={16} className="mr-2" />
+                      <span>{house.specifications?.bedroomCount || 0} Beds</span>
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <Ruler size={16} className="mr-2" />
+                      <span>{house.luas} m²</span>
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <DollarSign size={16} className="mr-2" />
+                      <span>Rp {house.harga.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center text-gray-600">
+                      <Calendar size={16} className="mr-2" />
+                      <span>{house.durasi} days</span>
+                    </div>
+                  </div>
+
+                  {/* Materials Summary */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Layers size={16} className="mr-2" />
+                      <span className="font-medium">Materials</span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {house.materials?.length || 0} materials listed
+                    </div>
+                  </div>
+
+                  {/* Blueprints */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <FileText size={16} className="mr-2" />
+                      <span className="font-medium">Blueprints</span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {house.blueprints?.length || 0} blueprints available
+                    </div>
+                  </div>
+
+                  {/* Construction Stages */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center text-gray-600 mb-2">
+                      <Hammer size={16} className="mr-2" />
+                      <span className="font-medium">Construction</span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {house.constructionStages?.length || 0} stages
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-2 pt-4 border-t">
+                    <Link href={`/Admin/Houses/Edit/${house.id}`}>
+                      <button className="p-2 text-gray-600 hover:text-amber-800">
+                        <Edit size={20} />
+                      </button>
+                    </Link>
+                    <button
+                      className="p-2 text-gray-600 hover:text-red-600"
+                      onClick={() => handleDeleteClick(house.id!)}
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredHouses.length === 0 && (
+          <div className="text-center py-12">
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <Home size={48} className="mx-auto text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900">No houses found</h3>
+              <p className="mt-2 text-gray-600">Try adjusting your search or filters</p>
             </div>
           </div>
         )}
@@ -228,62 +267,45 @@ export default function HousesPage() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteHouseId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-xl shadow-lg max-w-md w-full p-6"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full"
             >
-              <div className="flex justify-end">
-                <button onClick={cancelDelete} className="text-gray-400 hover:text-gray-500">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div className="text-center mb-6">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                  <Trash2 className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Hapus Rumah</h3>
-                <p className="text-sm text-gray-500">
-                  Apakah Anda yakin ingin menghapus rumah ini? Tindakan ini tidak dapat dibatalkan.
-                </p>
-              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Delete House</h3>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this house? This action cannot be undone.</p>
               
               {deleteError && (
-                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg">
                   {deleteError}
                 </div>
               )}
               
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+              <div className="flex justify-end gap-4">
                 <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                  onClick={cancelDelete}
+                  onClick={handleDeleteCancel}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900"
                   disabled={isDeleting}
                 >
-                  Batal
+                  Cancel
                 </button>
                 <button
-                  type="button"
-                  className="px-4 py-2 rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  onClick={confirmDelete}
+                  onClick={handleDeleteConfirm}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                   disabled={isDeleting}
                 >
-                  {isDeleting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      <span>Menghapus...</span>
-                    </>
-                  ) : (
-                    <span>Ya, Hapus</span>
-                  )}
+                  {isDeleting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

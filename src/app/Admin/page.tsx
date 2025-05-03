@@ -6,7 +6,17 @@ import { isAdmin } from '@/services/adminService';
 import { useRouter } from 'next/navigation';
 import { app } from '@/firebase';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  Users, 
+  Home, 
+  Settings, 
+  BarChart2, 
+  MessageSquare, 
+  FileText,
+  Shield,
+  Bell
+} from 'lucide-react';
 
 const auth = getAuth(app);
 
@@ -22,7 +32,6 @@ export default function AdminDashboard() {
       setLoading(false);
 
       if (!adminStatus) {
-        // Redirect non-admin users to home page
         router.push('/');
       }
     };
@@ -52,45 +61,155 @@ export default function AdminDashboard() {
   }
 
   if (!authorized) {
-    return null; // This will never show as we redirect unauthorized users
+    return null;
   }
 
+  const adminFeatures = [
+    {
+      title: "Manajemen Pengguna",
+      description: "Kelola pengguna dan hak akses",
+      icon: Users,
+      href: "/Admin/Users",
+      color: "bg-blue-50",
+      iconColor: "text-blue-600"
+    },
+    {
+      title: "Manajemen Rumah",
+      description: "Kelola rumah prebuilt",
+      icon: Home,
+      href: "/Admin/Houses",
+      color: "bg-green-50",
+      iconColor: "text-green-600"
+    },
+    {
+      title: "Analitik",
+      description: "Lihat statistik dan laporan",
+      icon: BarChart2,
+      href: "/Admin/Analytics",
+      color: "bg-purple-50",
+      iconColor: "text-purple-600"
+    },
+    {
+      title: "Pesan & Feedback",
+      description: "Kelola pesan dan feedback pengguna",
+      icon: MessageSquare,
+      href: "/Admin/Messages",
+      color: "bg-pink-50",
+      iconColor: "text-pink-600"
+    },
+    {
+      title: "Dokumentasi",
+      description: "Kelola dokumentasi dan panduan",
+      icon: FileText,
+      href: "/Admin/Documentation",
+      color: "bg-amber-50",
+      iconColor: "text-amber-600"
+    },
+    {
+      title: "Keamanan",
+      description: "Pengaturan keamanan dan privasi",
+      icon: Shield,
+      href: "/Admin/Security",
+      color: "bg-red-50",
+      iconColor: "text-red-600"
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F6F6EC] pt-16 pb-24">
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="mb-6">
-          <Link href="/" className="inline-flex items-center text-amber-800 hover:text-amber-700">
-            <ChevronLeft size={20} />
-            <span>Kembali ke Halaman Utama</span>
-          </Link>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-md p-8">
-          <h1 className="text-3xl font-bold text-amber-800 mb-8">Panel Admin</h1>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* User Management Card */}
-            <div className="bg-amber-50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <h2 className="text-xl font-semibold mb-4">Manajemen Pengguna</h2>
-              <p className="text-gray-600">Kelola pengguna dan hak akses</p>
-              <Link href="/Admin/Users">
-                <button className="mt-4 px-4 py-2 bg-amber-800 text-white rounded-md hover:bg-amber-700 transition-colors">
-                  Kelola Pengguna
-                </button>
-              </Link>
-            </div>
-            
-            {/* House Management Card */}
-            <div className="bg-amber-50 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-              <h2 className="text-xl font-semibold mb-4">Manajemen Rumah</h2>
-              <p className="text-gray-600">Kelola rumah prebuilt</p>
-              <Link href="/Admin/Houses">
-                <button className="mt-4 px-4 py-2 bg-amber-800 text-white rounded-md hover:bg-amber-700 transition-colors">
-                  Kelola Rumah
-                </button>
-              </Link>
+    <div className="min-h-screen bg-[#F6F6EC]">
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <Link href="/" className="inline-flex items-center text-amber-800 hover:text-amber-700">
+              <ChevronLeft size={20} />
+              <span>Kembali ke Halaman Utama</span>
+            </Link>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 text-gray-600 hover:text-amber-800 relative">
+                <Bell size={20} />
+                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <button className="p-2 text-gray-600 hover:text-amber-800">
+                <Settings size={20} />
+              </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Panel Admin</h1>
+          <p className="mt-2 text-gray-600">Kelola dan pantau aktivitas sistem</p>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Pengguna</p>
+                <p className="text-2xl font-semibold text-gray-900">1,234</p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Users className="text-blue-600" size={24} />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total Rumah</p>
+                <p className="text-2xl font-semibold text-gray-900">567</p>
+              </div>
+              <div className="p-3 bg-green-50 rounded-lg">
+                <Home className="text-green-600" size={24} />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Pesan Baru</p>
+                <p className="text-2xl font-semibold text-gray-900">12</p>
+              </div>
+              <div className="p-3 bg-pink-50 rounded-lg">
+                <MessageSquare className="text-pink-600" size={24} />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Aktivitas Hari Ini</p>
+                <p className="text-2xl font-semibold text-gray-900">89</p>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-lg">
+                <BarChart2 className="text-purple-600" size={24} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {adminFeatures.map((feature, index) => (
+            <Link key={index} href={feature.href}>
+              <div className={`${feature.color} rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer`}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{feature.title}</h3>
+                    <p className="mt-1 text-sm text-gray-600">{feature.description}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${feature.color}`}>
+                    <feature.icon className={feature.iconColor} size={24} />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
     </div>

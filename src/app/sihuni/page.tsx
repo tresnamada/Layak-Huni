@@ -208,6 +208,10 @@ export default function AiPage() {
     }
   };
 
+  const handleCustomDesign = () => {
+    router.push('/custom-design');
+  };
+
   const restartAnalysis = () => {
     setMessages([]);
     setQuestions([]);
@@ -686,15 +690,10 @@ export default function AiPage() {
 
                   {/* Custom Design Suggestion */}
                   {analysisResult.customDesignSuggestion && (
-                    <div className="mb-10">
-                      <div className="flex items-center mb-4">
-                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mr-3">
-                          <FiHome className="w-5 h-5 text-amber-600" />
-                        </div>
-                        <h3 className="text-2xl font-semibold text-gray-800">{analysisResult.customDesignSuggestion.title}</h3>
-                      </div>
-                      <div className="bg-amber-50 p-8 rounded-xl border border-amber-100">
-                        <p className="text-gray-700 leading-relaxed text-lg mb-6">{analysisResult.customDesignSuggestion.description}</p>
+                    <div className="mt-8">
+                      <div className="bg-amber-50 p-6 rounded-xl border border-amber-100">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-4">{analysisResult.customDesignSuggestion.title}</h3>
+                        <p className="text-gray-600 mb-4">{analysisResult.customDesignSuggestion.description}</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {analysisResult.customDesignSuggestion.benefits.map((benefit, index) => (
                             <div key={index} className="flex items-start bg-white p-4 rounded-xl shadow-sm">
@@ -706,7 +705,7 @@ export default function AiPage() {
                           ))}
                         </div>
                         <button
-                          onClick={() => router.push('/custom-design')}
+                          onClick={handleCustomDesign}
                           className="mt-6 w-full bg-amber-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-amber-700 transition-colors flex items-center justify-center"
                         >
                           <FiHome className="w-5 h-5 mr-2" />

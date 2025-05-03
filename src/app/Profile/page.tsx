@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Tab } from '@headlessui/react';
-import { FiMail, FiPhone, FiMapPin, FiEdit, FiMessageSquare, FiCamera, FiGrid, FiBookmark, FiAward, FiHome, FiStar } from 'react-icons/fi';
+import { FiMail, FiPhone, FiMapPin, FiEdit, FiMessageSquare, FiCamera, FiGrid, FiBookmark, FiAward, FiHome, FiStar, FiLogOut } from 'react-icons/fi';
 import { getProfile, updateProfile, uploadProfileImage } from '@/services/profileService';
-import { getAuth } from 'firebase/auth';
+import { getAuth, signOut } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { isProfileComplete } from '@/services/profileService';
@@ -123,7 +123,7 @@ export default function ProfilePage() {
           setError(profileError || 'Failed to load profile');
         }
       } else {
-        router.push('/login');
+        router.push('/Login');
       }
       setLoading(false);
     });
@@ -179,6 +179,17 @@ export default function ProfilePage() {
       };
       
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Add logout function
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push('/Login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      setError('Gagal logout. Silakan coba lagi.');
     }
   };
 
@@ -376,9 +387,20 @@ export default function ProfilePage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <h1 className="text-5xl md:text-6xl font-bold text-[#594C1A] mb-3">
-                      {editedUser.firstName} {editedUser.lastName}
-                    </h1>
+                    <div className="flex justify-between items-center mb-3">
+                      <h1 className="text-5xl md:text-6xl font-bold text-[#594C1A]">
+                        {editedUser.firstName} {editedUser.lastName}
+                      </h1>
+                      <motion.button
+                        onClick={handleLogout}
+                        className="px-6 py-3 bg-red-100 text-red-600 rounded-xl font-medium hover:bg-red-200 transition-colors flex items-center space-x-2"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <FiLogOut className="w-5 h-5" />
+                        <span>Logout</span>
+                      </motion.button>
+                    </div>
                     <div className="flex items-center justify-center md:justify-start gap-3 text-[#938656] text-lg">
                       <FiStar className="w-5 h-5" />
                       <span>Premium Member since {editedUser.joinDate}</span>

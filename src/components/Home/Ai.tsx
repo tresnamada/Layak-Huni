@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-
+import Link from 'next/link';
 export default function SiHuniHomeDesign() {
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
@@ -295,7 +295,9 @@ export default function SiHuniHomeDesign() {
                 transition={{ duration: 0.8 }}
               />
               <span className="relative z-10 flex items-center justify-center gap-2">
+                <Link href="/sihuni">
                 Mulai Konsultasi
+                </Link>
                 <motion.span
                   animate={{ x: [0, 5, 0] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}

@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Home, Search, Users, User, Menu, Settings } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Home, Search, Users, User, Menu, Settings, X, ChevronDown } from "lucide-react";
 import { getAuth } from 'firebase/auth';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { isProfileComplete } from '@/services/profileService';
@@ -16,6 +16,7 @@ const auth = getAuth(app);
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { isAdminUser } = useAdmin();
@@ -30,6 +31,11 @@ export default function Navbar() {
 
     return () => unsubscribe();
   }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleProfileClick = async () => {
     const currentUser = auth.currentUser;
@@ -48,14 +54,9 @@ export default function Navbar() {
     const items = [
       { href: "/", label: "Home", icon: Home },
       { href: "/sihuni", label: "Si Huni", icon: Search },
-      { href: "/Marketplace", label: "PreBuild", icon: Menu },
+      { href: "/PreBuild", label: "PreBuild", icon: Menu },
       { href: "/komunitas", label: "Komunitas", icon: Users },
     ];
-
-    // Add Admin link for admin users
-    if (isAdminUser) {
-      items.push({ href: "/Admin", label: "Admin", icon: Settings });
-    }
 
     return items;
   };
@@ -86,20 +87,96 @@ export default function Navbar() {
   );
 
   const ProfileButton = () => (
-    <motion.div
-      whileHover={{ scale: 1.1 }}
-      className="p-2 text-amber-800 cursor-pointer bg-amber-100/50 rounded-full"
-      onClick={handleProfileClick}
-    >
-      <User size={24} />
-    </motion.div>
+    <div className="relative group">
+      <motion.div
+        whileHover={{ scale: 1.1 }}
+        className="p-2 text-amber-800 cursor-pointer bg-amber-100/50 rounded-full flex items-center gap-2"
+        onClick={handleProfileClick}
+      >
+        <User size={24} />
+        <ChevronDown size={16} className="transform group-hover:rotate-180 transition-transform duration-200" />
+      </motion.div>
+
+      {/* Dropdown Menu */}
+      <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+        <div 
+          className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-gray-700 flex items-center gap-2"
+          onClick={handleProfileClick}
+        >
+          <User size={16} />
+          <span>Profile</span>
+        </div>
+        
+        {isAdminUser && (
+          <Link href="/Admin">
+            <div className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-gray-700 flex items-center gap-2">
+              <Settings size={16} />
+              <span>Admin Panel</span>
+            </div>
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+
+  // Update the mobile profile section to include admin option
+  const MobileProfileSection = () => (
+    <div className="pt-4 mt-4 border-t border-gray-100">
+      {isLoggedIn ? (
+        <div className="flex flex-col space-y-2">
+          <motion.div
+            whileHover={{ x: 10 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleProfileClick}
+            className="flex items-center space-x-4 p-3 rounded-xl text-gray-600 hover:bg-gray-50"
+          >
+            <User size={20} />
+            <span className="font-medium">Profile</span>
+          </motion.div>
+          
+          {isAdminUser && (
+            <Link href="/Admin">
+              <motion.div
+                whileHover={{ x: 10 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center space-x-4 p-3 rounded-xl text-gray-600 hover:bg-gray-50"
+              >
+                <Settings size={20} />
+                <span className="font-medium">Admin Panel</span>
+              </motion.div>
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col space-y-2">
+          <Link href="/Login">
+            <motion.div
+              whileHover={{ x: 10 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full p-3 text-center font-medium text-amber-800 border-2 border-amber-800 rounded-xl hover:bg-amber-50"
+            >
+              Masuk
+            </motion.div>
+          </Link>
+          <Link href="/Register">
+            <motion.div
+              whileHover={{ x: 10 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full p-3 text-center font-medium text-white bg-amber-800 rounded-xl hover:bg-amber-700"
+            >
+              Daftar
+            </motion.div>
+          </Link>
+        </div>
+      )}
+    </div>
   );
 
   return (
     <>
       {/* Desktop Navigation */}
-      <div className="relative z-10 w-full hidden md:block bg-[#F6F6EC]">
-        <nav className="flex items-center justify-between py-8 md:justify-center ">
+      <div className="relative z-10 w-full hidden md:block">
+        <nav className="flex items-center justify-between py-8 md:justify-center">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -123,75 +200,73 @@ export default function Navbar() {
         </nav>
       </div>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="fixed bottom-0 left-0 right-0 bg-[#F6F6EC] border-t border-gray-200 md:hidden z-50"
-      >
-        <div className="flex items-center justify-around px-4 py-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            
-            return (
-              <Link key={item.href} href={item.href}>
-                <motion.div
-                  className="flex flex-col items-center py-2 px-3"
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <motion.div
-                    className={`p-2 rounded-full ${
-                      isActive 
-                        ? 'bg-amber-800 text-white' 
-                        : 'text-gray-600 hover:bg-amber-50'
-                    } transition-colors duration-300`}
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    <Icon size={20} />
-                  </motion.div>
-                  <span className={`text-xs mt-1 ${
-                    isActive ? 'text-amber-800 font-medium' : 'text-gray-600'
-                  }`}>
-                    {item.label}
-                  </span>
-                </motion.div>
-              </Link>
-            );
-          })}
-          {isLoggedIn ? (
-            <motion.div
-              className="flex flex-col items-center py-2 px-3"
-              whileTap={{ scale: 0.9 }}
-              onClick={handleProfileClick}
-            >
-              <motion.div
-                className="p-2 rounded-full text-gray-600 hover:bg-amber-50 transition-colors duration-300"
-                whileHover={{ scale: 1.1 }}
-              >
-                <User size={20} />
-              </motion.div>
-              <span className="text-xs mt-1 text-gray-600">Profil</span>
-            </motion.div>
-          ) : (
-            <Link href="/Login">
-              <motion.div
-                className="flex flex-col items-center py-2 px-3"
-                whileTap={{ scale: 0.9 }}
-              >
-                <motion.div
-                  className="p-2 rounded-full text-gray-600 hover:bg-amber-50 transition-colors duration-300"
-                  whileHover={{ scale: 1.1 }}
-                >
-                  <User size={20} />
-                </motion.div>
-                <span className="text-xs mt-1 text-gray-600">Masuk</span>
-              </motion.div>
+      {/* Mobile Navigation */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50">
+        {/* Mobile Header */}
+        <motion.div
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          className={`${isMobileMenuOpen ? 'bg-white border-b border-white' : 'bg-transparent '}`}
+        >
+          <div className="flex items-center justify-between px-4 py-3">
+            <Link href="/" className="font-bold text-xl text-amber-800">
+              SiHuni
             </Link>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-amber-800 hover:text-amber-800 transition-colors"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="fixed inset-0 top-[57px] bg-white/95 backdrop-blur-lg"
+            >
+              <div className="flex flex-col p-4 space-y-2">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <motion.div
+                        whileHover={{ x: 10 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`flex items-center space-x-4 p-3 rounded-xl ${
+                          isActive 
+                            ? 'bg-amber-50 text-amber-800' 
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon size={20} />
+                        <span className="font-medium">{item.label}</span>
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeIndicator"
+                            className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-800"
+                          />
+                        )}
+                      </motion.div>
+                    </Link>
+                  );
+                })}
+                
+                {/* Replace the old profile section with the new MobileProfileSection */}
+                <MobileProfileSection />
+              </div>
+            </motion.div>
           )}
-        </div>
-      </motion.div>
+        </AnimatePresence>
+      </div>
     </>
   );
 }

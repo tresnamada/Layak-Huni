@@ -36,8 +36,8 @@ if (!primaryApiKey && !fallbackApiKey) {
   throw new Error('No Gemini API keys are set in environment variables');
 }
 
-// We'll initialize this later when we know which key to use
-let genAI: any = null;
+// Initialize genAI with primary key first
+let genAI = new GoogleGenerativeAI(primaryApiKey!);
 
 // Modify retryWithBackoff to handle API key rotation
 async function retryWithBackoff<T>(
@@ -54,8 +54,7 @@ async function retryWithBackoff<T>(
     throw new Error(`${useApiKey} API key is not available`);
   }
 
-  // Initialize the genAI instance with the selected API key
-  const { GoogleGenerativeAI } = await import('@google/generative-ai');
+  // Reinitialize the genAI instance with the selected API key
   genAI = new GoogleGenerativeAI(apiKey);
   
   for (let i = 0; i < maxRetries; i++) {
@@ -133,22 +132,29 @@ Anda adalah asisten AI untuk platform SiapHuni yang membantu calon pembeli rumah
 
 User bertanya tentang rumah siap huni: "${userMessage}"
 
-Buat 5 pertanyaan spesifik untuk memahami kebutuhan mereka dengan lebih baik. Pertanyaan harus personal dan relevan dengan query awal mereka.
+Buat 5 pertanyaan spesifik untuk memahami kebutuhan mereka dengan lebih baik. Beberapa pertanyaan bisa memiliki opsi pilihan, sementara yang lain bisa berupa pertanyaan terbuka.
 
 Format setiap pertanyaan sebagai objek JSON dengan field berikut:
 - id: string (contoh: "style-1", "budget-1", "space-1", "location-1", "features-1")
 - question: string (pertanyaan dalam Bahasa Indonesia)
 - type: "options" atau "text"
 - options: array of string (hanya untuk type "options")
+- placeholder: string (hanya untuk type "text", contoh: "Jelaskan kebutuhan ruang Anda...")
 
 Pertanyaan harus mencakup:
-1. Gaya dan desain rumah (contoh opsi: Modern, Minimalis, Klasik, Kontemporer)
-2. Budget (contoh opsi: <500jt, 500jt-1M, 1M-2M, >2M)
-3. Kebutuhan ruang (contoh opsi: 2-3 kamar, 4-5 kamar, >5 kamar)
-4. Lokasi preferensi (contoh opsi: Jakarta, Bandung, Surabaya, Bali)
-5. Fitur khusus (contoh opsi: Kolam renang, Taman luas, Smart home, Parkir mobil)
+1. Gaya dan desain rumah (type: "options", opsi: Modern, Minimalis, Klasik, Kontemporer, Mediterania)
+2. Budget (type: "options", opsi: <500jt, 500jt-1M, 1M-2M, >2M)
+3. Kebutuhan ruang (type: "text", placeholder: "Jelaskan kebutuhan ruang Anda...")
+4. Lokasi preferensi (type: "options", opsi: Jakarta, Bandung, Surabaya, Bali, Medan)
+5. Fitur khusus (type: "text", placeholder: "Apa fitur khusus yang Anda inginkan di rumah?")
 
-Pastinya anda boleh improvisasi opsi anda sendiri. Jika user bertanya atau meminta sesuatu yang sudah ada di opsi, maka anda boleh menambahkan opsi baru. Seperti contoh pertanyaan user: "Saya ingin rumah yang minimalis di budget sekitar 500jt-2M." Maka anda boleh menambahkan opsi lainnya untuk memudahkan fase analisis nantinya. Tetap respon dengan format JSON yang benar.
+Untuk pertanyaan dengan type "options":
+- Harus memiliki minimal 4 opsi yang jelas dan mudah dipahami
+- Opsi harus mencakup semua kemungkinan jawaban yang relevan
+
+Untuk pertanyaan dengan type "text":
+- Berikan placeholder yang jelas untuk membantu user menjawab
+- Pertanyaan harus memungkinkan user untuk memberikan jawaban detail
 
 Format respons sebagai array JSON, tanpa teks atau format tambahan.
 `;
@@ -253,13 +259,13 @@ Cocokkan dengan kebutuhan user dan berikan respons dalam format JSON, tanpa teks
 
       try {
         response = await retryWithBackoff(() => chat.sendMessage(analysisPrompt));
-      const aiResponse = response.response.text();
-      
-      // Clean the response to ensure it's valid JSON
-      const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
-      
-      return NextResponse.json({ 
-        response: cleanResponse,
+        const aiResponse = response.response.text();
+        
+        // Clean the response to ensure it's valid JSON
+        const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+        
+        return NextResponse.json({ 
+          response: cleanResponse,
           success: true
         });
       } catch (error) {
@@ -294,7 +300,8 @@ User meminta: "${userMessage}"
 
 Berdasarkan permintaan tersebut, buatlah 3 desain rumah yang berbeda. Setiap desain harus detail dan realistis.
 
-Format respons sebagai objek JSON dengan struktur:
+Format respons HARUS berupa objek JSON dengan struktur berikut:
+
 {
   "suggestions": [
     {
@@ -335,9 +342,13 @@ Format respons sebagai objek JSON dengan struktur:
   ]
 }
 
-Pastikan setiap desain berbeda dari segi gaya, tata ruang, dan karakteristik.
-Berikan detail yang cukup untuk membayangkan rumah tersebut.
-Pastikan estimasi harga realistis untuk ukuran dan gaya rumah di Indonesia.
+PENTING:
+1. Respons HARUS berupa JSON yang valid
+2. JANGAN tambahkan teks atau komentar di luar format JSON
+3. Pastikan semua string menggunakan tanda kutip ganda (")
+4. Pastikan semua array dan objek memiliki format yang benar
+5. JANGAN gunakan tanda kutip tunggal (')
+6. JANGAN gunakan karakter khusus dalam string
 
 Berikan HANYA respons JSON tanpa pengantar atau penjelasan tambahan.
 `;
@@ -349,10 +360,24 @@ Berikan HANYA respons JSON tanpa pengantar atau penjelasan tambahan.
         // Clean the response to ensure it's valid JSON
         const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
         
-        return NextResponse.json({ 
-          response: cleanResponse,
-          success: true
-        });
+        // Validate JSON before sending
+        try {
+          JSON.parse(cleanResponse);
+          return NextResponse.json({ 
+            response: cleanResponse,
+            success: true
+          });
+        } catch (parseError) {
+          console.error('Invalid JSON response:', parseError);
+          return NextResponse.json(
+            { 
+              error: 'Gagal memproses desain yang dihasilkan',
+              details: 'Format respons tidak valid',
+              success: false
+            },
+            { status: 500 }
+          );
+        }
       } catch (error) {
         console.error('Error generating design:', error);
         return NextResponse.json(

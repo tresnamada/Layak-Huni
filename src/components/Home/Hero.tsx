@@ -43,7 +43,7 @@ const HomePage = () => {
       {/* Background Image with Enhanced Overlay */}
       <div className="absolute inset-0 w-full h-full">
         <motion.div 
-          className="w-full h-full"
+          className="w-full h-full rounded-2xl"
           animate={{ scale: 0.9, opacity: 1 }} 
           transition={{ 
             duration: 1.5, 
@@ -52,9 +52,9 @@ const HomePage = () => {
           }}
           style={{ y }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40 z-10 rounded-2xl" />
           <Image
-            className="object-cover w-full h-full rounded-[16px]"
+            className="object-cover w-full h-full rounded-2xl"
             src="/House.jpeg"
             alt="Modern luxury house"
             layout="fill"

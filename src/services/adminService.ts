@@ -1,9 +1,5 @@
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
-import { getAuth, Auth } from 'firebase/auth';
-import { app } from '@/firebase';
-
-const auth = getAuth(app);
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 /**
  * Check if a user has admin privileges
@@ -12,9 +8,9 @@ const auth = getAuth(app);
  */
 export async function isAdmin(userId: string): Promise<boolean> {
   try {
-    const userRef = doc(db, 'admins', userId);
-    const docSnap = await getDoc(userRef);
-    return docSnap.exists();
+    const profileRef = doc(db, 'profiles', userId);
+    const docSnap = await getDoc(profileRef);
+    return docSnap.exists() && docSnap.data().isAdmin === true;
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
@@ -24,10 +20,9 @@ export async function isAdmin(userId: string): Promise<boolean> {
 /**
  * Sets a user as an admin
  * @param userId The user ID to make an admin
- * @param byUserId The ID of the user making the change (for audit)
  * @returns Promise<boolean> True if successful, false otherwise
  */
-export const setUserAsAdmin = async (userId: string, byUserId: string): Promise<boolean> => {
+export const setUserAsAdmin = async (userId: string): Promise<boolean> => {
   try {
     if (!userId) return false;
     
@@ -36,14 +31,6 @@ export const setUserAsAdmin = async (userId: string, byUserId: string): Promise<
     await updateDoc(profileRef, {
       isAdmin: true,
       updatedAt: new Date().toISOString(),
-    });
-    
-    // Add entry to admins collection
-    const adminRef = doc(db, 'admins', userId);
-    await setDoc(adminRef, {
-      active: true,
-      createdAt: new Date().toISOString(),
-      createdBy: byUserId,
     });
     
     return true;
@@ -56,10 +43,9 @@ export const setUserAsAdmin = async (userId: string, byUserId: string): Promise<
 /**
  * Removes admin privileges from a user
  * @param userId The user ID to remove admin privileges from
- * @param byUserId The ID of the user making the change (for audit)
  * @returns Promise<boolean> True if successful, false otherwise
  */
-export const removeUserAsAdmin = async (userId: string, byUserId: string): Promise<boolean> => {
+export const removeUserAsAdmin = async (userId: string): Promise<boolean> => {
   try {
     if (!userId) return false;
     
@@ -69,14 +55,6 @@ export const removeUserAsAdmin = async (userId: string, byUserId: string): Promi
       isAdmin: false,
       updatedAt: new Date().toISOString(),
     });
-    
-    // Update entry in admins collection
-    const adminRef = doc(db, 'admins', userId);
-    await setDoc(adminRef, {
-      active: false,
-      updatedAt: new Date().toISOString(),
-      updatedBy: byUserId,
-    }, { merge: true });
     
     return true;
   } catch (error) {
