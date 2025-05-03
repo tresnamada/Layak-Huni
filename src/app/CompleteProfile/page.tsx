@@ -88,7 +88,7 @@ export default function CompleteProfilePage() {
     try {
       const { success, error } = await createProfile(auth.currentUser.uid, profileData);
       if (success) {
-        router.push('/profile');
+        router.push('/Profile');
       } else {
         setError(error || 'Failed to create profile');
       }

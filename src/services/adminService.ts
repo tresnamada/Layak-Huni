@@ -1,36 +1,25 @@
 import { db } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, where, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
+import { app } from '@/firebase';
+
+const auth = getAuth(app);
 
 /**
- * Checks if a user has admin privileges
+ * Check if a user has admin privileges
  * @param userId The user ID to check
- * @returns Promise<boolean> True if the user is an admin, false otherwise
+ * @returns True if the user is an admin, false otherwise
  */
-export const isAdmin = async (userId: string): Promise<boolean> => {
+export async function isAdmin(userId: string): Promise<boolean> {
   try {
-    if (!userId) return false;
-    
-    // First check if there's an admin field in the user's profile
-    const profileRef = doc(db, 'profiles', userId);
-    const profileSnap = await getDoc(profileRef);
-    
-    if (profileSnap.exists()) {
-      const profileData = profileSnap.data();
-      if (profileData.isAdmin === true) {
-        return true;
-      }
-    }
-    
-    // If not found in profile, check the dedicated admins collection
-    const adminRef = doc(db, 'admins', userId);
-    const adminSnap = await getDoc(adminRef);
-    
-    return adminSnap.exists() && adminSnap.data()?.active === true;
+    const userRef = doc(db, 'admins', userId);
+    const docSnap = await getDoc(userRef);
+    return docSnap.exists();
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
   }
-};
+}
 
 /**
  * Sets a user as an admin
