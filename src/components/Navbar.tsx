@@ -55,7 +55,7 @@ export default function Navbar() {
       { href: "/", label: "Home", icon: Home },
       { href: "/sihuni", label: "Si Huni", icon: Search },
       { href: "/PreBuild", label: "PreBuild", icon: Menu },
-      { href: "/komunitas", label: "Komunitas", icon: Users },
+      { href: "/Komunitas", label: "Komunitas", icon: Users },
     ];
 
     return items;
