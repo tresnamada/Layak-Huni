@@ -15,7 +15,9 @@ import {
   MessageSquare, 
   FileText,
   Shield,
-  Bell
+  Bell,
+  Package,
+  Truck
 } from 'lucide-react';
 
 const auth = getAuth(app);
@@ -80,6 +82,14 @@ export default function AdminDashboard() {
       href: "/Admin/Houses",
       color: "bg-green-50",
       iconColor: "text-green-600"
+    },
+    {
+      title: "Tracking Material",
+      description: "Kelola status pengiriman material",
+      icon: Package,
+      href: "/Admin/MaterialTracking",
+      color: "bg-orange-50",
+      iconColor: "text-orange-600"
     },
     {
       title: "Analitik",
@@ -172,11 +182,11 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Pesan Baru</p>
-                <p className="text-2xl font-semibold text-gray-900">12</p>
+                <p className="text-sm text-gray-500">Material Dikirim</p>
+                <p className="text-2xl font-semibold text-gray-900">328</p>
               </div>
-              <div className="p-3 bg-pink-50 rounded-lg">
-                <MessageSquare className="text-pink-600" size={24} />
+              <div className="p-3 bg-orange-50 rounded-lg">
+                <Truck className="text-orange-600" size={24} />
               </div>
             </div>
           </div>

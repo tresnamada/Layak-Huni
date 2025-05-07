@@ -12,6 +12,7 @@ module.exports = {
       fontFamily: {
         // Set Plus Jakarta Sans as the default sans-serif font
         sans: ['"Plus Jakarta Sans"', ...fontFamily.sans],
+        jakarta: ['var(--font-jakarta)'],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

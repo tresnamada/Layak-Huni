@@ -3,13 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Tab } from '@headlessui/react';
-import { FiMail, FiPhone, FiMapPin, FiEdit, FiMessageSquare, FiCamera, FiGrid, FiBookmark, FiAward, FiHome, FiStar, FiLogOut } from 'react-icons/fi';
+import { FiMail, FiPhone, FiMapPin, FiEdit, FiMessageSquare, FiCamera, FiGrid, FiBookmark, FiAward, FiHome, FiStar, FiLogOut, FiCalendar, FiDollarSign } from 'react-icons/fi';
 import { getProfile, updateProfile, uploadProfileImage } from '@/services/profileService';
 import { getAuth, signOut } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { isProfileComplete } from '@/services/profileService';
 import Navbar from '@/components/Navbar';
+import { getUserPurchases, PurchaseData } from '@/services/purchaseService';
+import Link from 'next/link';
 
 const auth = getAuth();
 
@@ -104,6 +106,7 @@ export default function ProfilePage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [purchases, setPurchases] = useState<PurchaseData[]>([]);
   const router = useRouter();
   
   useEffect(() => {
@@ -121,6 +124,13 @@ export default function ProfilePage() {
           setPreviewImage(data.profileImage || null);
         } else {
           setError(profileError || 'Failed to load profile');
+        }
+
+        try {
+          const purchaseData = await getUserPurchases(user.uid);
+          setPurchases(purchaseData);
+        } catch (err) {
+          console.error('Error loading purchases:', err);
         }
       } else {
         router.push('/Login');
@@ -458,9 +468,9 @@ export default function ProfilePage() {
             <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
               <Tab.List className="flex p-3 space-x-3 bg-[#594C1A]/5">
                 {[
-                  { name: 'Projects', icon: FiGrid },
-                  { name: 'Consultations', icon: FiMessageSquare },
-                  { name: 'Saved', icon: FiBookmark }
+                  { name: 'Rumah Dibeli', icon: FiHome },
+                  { name: 'Konsultasi', icon: FiMessageSquare },
+                  { name: 'Disimpan', icon: FiBookmark }
                 ].map((tab) => (
                   <Tab
                     key={tab.name}
@@ -485,8 +495,60 @@ export default function ProfilePage() {
 
               <Tab.Panels className="p-8">
                 <Tab.Panel>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {/* Project Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {purchases.map((purchase) => (
+                      <motion.div
+                        key={purchase.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-2xl shadow-lg overflow-hidden"
+                      >
+                        <div className="relative h-48">
+                          <img
+                            src={purchase.houseImage}
+                            alt={purchase.houseName}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                          <div className="absolute bottom-4 left-4">
+                            <h3 className="text-lg font-semibold text-white">{purchase.houseName}</h3>
+                            <p className="text-sm text-white/80">
+                              {new Date(purchase.purchaseDate.seconds * 1000).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              purchase.status === 'completed' 
+                                ? 'bg-green-100 text-green-800' 
+                                : purchase.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {purchase.status === 'completed' ? 'Selesai' : 
+                               purchase.status === 'pending' ? 'Menunggu' : 'Dibatalkan'}
+                            </span>
+                            <span className="text-gray-600 font-medium">
+                              {new Intl.NumberFormat('id-ID', {
+                                style: 'currency',
+                                currency: 'IDR'
+                              }).format(purchase.totalAmount)}
+                            </span>
+                          </div>
+                          <Link 
+                            href={`/Profile/Purchase/${purchase.id}`}
+                            className="block w-full py-2 text-center bg-[#594C1A] text-white rounded-xl font-medium hover:bg-[#938656] transition-colors"
+                          >
+                            Lihat Detail
+                          </Link>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 </Tab.Panel>
                 <Tab.Panel>
