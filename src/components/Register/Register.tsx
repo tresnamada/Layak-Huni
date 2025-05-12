@@ -19,12 +19,12 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
     setIsSubmitting(true);
 
     try {
-      const { success, error } = await registerUser(email, password);
-      if (success) {
+      const { user, error } = await registerUser(email, password);
+      if (user) {
         router.push('/CompleteProfile');
       } else {
         setError(error || 'Failed to register');

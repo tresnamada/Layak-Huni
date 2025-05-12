@@ -1,4 +1,4 @@
-import { db } from '@/lib/firebase';
+import { db } from '@/firebase';
 import { collection, addDoc, query, where, getDocs, Timestamp, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
 import { HouseData } from './houseService';
 

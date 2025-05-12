@@ -8,9 +8,20 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
  */
 export async function isAdmin(userId: string): Promise<boolean> {
   try {
+    // First check in users collection for role="admin"
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists() && userSnap.data().role === "admin") {
+      return true;
+    }
+    
+    // For backward compatibility, also check profiles collection
     const profileRef = doc(db, 'profiles', userId);
-    const docSnap = await getDoc(profileRef);
-    return docSnap.exists() && docSnap.data().isAdmin === true;
+    const profileSnap = await getDoc(profileRef);
+    return profileSnap.exists() && (
+      profileSnap.data().isAdmin === true || 
+      profileSnap.data().role === "admin"
+    );
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
@@ -26,10 +37,18 @@ export const setUserAsAdmin = async (userId: string): Promise<boolean> => {
   try {
     if (!userId) return false;
     
-    // Update the user's profile
+    // Update the user's document in users collection
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      role: "admin",
+      updatedAt: new Date().toISOString(),
+    });
+    
+    // For backward compatibility, also update profiles collection
     const profileRef = doc(db, 'profiles', userId);
     await updateDoc(profileRef, {
-      isAdmin: true,
+      role: "admin",
+      isAdmin: true, // Keep this for backward compatibility
       updatedAt: new Date().toISOString(),
     });
     
@@ -49,9 +68,17 @@ export const removeUserAsAdmin = async (userId: string): Promise<boolean> => {
   try {
     if (!userId) return false;
     
-    // Update the user's profile
+    // Update the user's document in users collection
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      role: "user",
+      updatedAt: new Date().toISOString(),
+    });
+    
+    // For backward compatibility, also update profiles collection
     const profileRef = doc(db, 'profiles', userId);
     await updateDoc(profileRef, {
+      role: "user",
       isAdmin: false,
       updatedAt: new Date().toISOString(),
     });
