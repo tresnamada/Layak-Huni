@@ -1,0 +1,287 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is accessing their own document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper function to check if user is an admin
+    function isAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.isAdmin == true ||
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == "admin" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin" ||
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active == true
+      );
+    }
+
+    // Helper function to check if user is an architect
+    function isArchitect() {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "architect";
+    }
+
+    // Helper function to validate image size (max 1MB)
+    function isValidImageSize(imageUrl) {
+      return imageUrl == null || 
+        (imageUrl is string && 
+         imageUrl.size() <= 1048576); // 1MB in bytes
+    }
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Allow public read access to the test collection
+    match /test/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Profiles collection rules
+    match /profiles/{userId} {
+      // Allow read if authenticated
+      allow read: if isAuthenticated();
+      
+      // Allow create/update if user is the owner and image size is valid
+      allow create, update: if isOwner(userId) && 
+        (!request.resource.data.keys().hasAny(['profileImage']) || 
+        isValidImageSize(request.resource.data.profileImage));
+      
+      // Allow delete if user is the owner
+      allow delete: if isOwner(userId);
+    }
+    
+    // Admins collection rules
+    match /admins/{userId} {
+      // Allow read if authenticated
+      allow read: if isAuthenticated();
+      
+      // Allow write only if the user is an admin
+      allow write: if isAdmin();
+    }
+    
+    // Houses collection rules
+    match /houses/{houseId} {
+      // Allow anyone to read houses
+      allow read: if true;
+      
+      // Allow only admins to create, update, delete houses
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Purchases collection rules
+    match /purchases/{purchaseId} {
+      // Allow read if user is the owner of the purchase or admin
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      
+      // Allow create if user is authenticated and creating their own purchase
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow update for status changes (for payment callback)
+      allow update: if isAuthenticated() && (
+        // User can only update their own purchase
+        (resource.data.userId == request.auth.uid &&
+        // Only allow updating specific fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'updatedAt'])) ||
+        // Or admin can update any purchase
+        isAdmin()
+      );
+      
+      // Only admin can delete purchases
+      allow delete: if isAdmin();
+    }
+    
+    // User generated designs rules
+    match /users/{userId}/generatedDesigns/{designId} {
+      // Allow read if user is the owner or admin
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Allow create if user is the owner
+      allow create: if isOwner(userId);
+      
+      // Allow update if user is the owner
+      allow update: if isOwner(userId);
+      
+      // Allow delete if user is the owner
+      allow delete: if isOwner(userId);
+    }
+    
+    // Allow reads to users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || isAdmin();
+      
+      // Allow authenticated users to create their own design documents
+      match /generatedDesigns/{designId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // Consultations collection rules
+    match /consultations/{consultationId} {
+      // Allow read if user is involved in the consultation (either as user or architect)
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.architectId == request.auth.uid ||
+        isAdmin()
+      );
+      
+      // Allow create if authenticated (users create consultations)
+      allow create: if isAuthenticated();
+      
+      // Allow update if user is the architect assigned to this consultation or an admin
+      allow update: if isAuthenticated() && (
+        resource.data.architectId == request.auth.uid || 
+        isAdmin() || 
+        // Or if the user is the owner and only updating specific non-sensitive fields
+        (resource.data.userId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'updatedAt']))
+      );
+      
+      // Only allow delete by admin
+      allow delete: if isAdmin();
+      
+      // Messages subcollection rules
+      match /messages/{messageId} {
+        // Allow read if user is involved in the parent consultation
+        allow read: if isAuthenticated() && (
+          get(/databases/$(database)/documents/consultations/$(consultationId)).data.userId == request.auth.uid ||
+          get(/databases/$(database)/documents/consultations/$(consultationId)).data.architectId == request.auth.uid ||
+          isAdmin()
+        );
+        
+        // Allow create if user is involved in the parent consultation and is setting their own ID as sender
+        allow create: if isAuthenticated() && (
+          (get(/databases/$(database)/documents/consultations/$(consultationId)).data.userId == request.auth.uid ||
+           get(/databases/$(database)/documents/consultations/$(consultationId)).data.architectId == request.auth.uid) &&
+          request.resource.data.senderId == request.auth.uid
+        );
+        
+        // Allow update only for read status by the non-sender
+        allow update: if isAuthenticated() && (
+          (get(/databases/$(database)/documents/consultations/$(consultationId)).data.userId == request.auth.uid ||
+           get(/databases/$(database)/documents/consultations/$(consultationId)).data.architectId == request.auth.uid) &&
+          resource.data.senderId != request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        );
+        
+        // Only allow delete by admin
+        allow delete: if isAdmin();
+      }
+    }
+    
+    // Support Threads collection rules
+    match /supportThreads/{threadId} {
+      // Allow read if user is the owner of the thread or an admin
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
+      
+      // Allow create if authenticated (users create support threads)
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow update if user is the owner (limited fields) or an admin
+      allow update: if isAuthenticated() && (
+        // User can only update specific fields of their own thread
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['updatedAt', 'unreadMessages'])) ||
+        // Admin can update any fields including status
+        isAdmin()
+      );
+      
+      // Only admin can delete support threads
+      allow delete: if isAdmin();
+      
+      // Support thread messages subcollection rules
+      match /messages/{messageId} {
+        // Allow read if user is the owner of the parent thread or an admin
+        allow read: if isAuthenticated() && (
+          get(/databases/$(database)/documents/supportThreads/$(threadId)).data.userId == request.auth.uid ||
+          isAdmin()
+        );
+        
+        // Allow create if user is the owner of the thread or an admin and setting their own ID as sender
+        allow create: if isAuthenticated() && (
+          (get(/databases/$(database)/documents/supportThreads/$(threadId)).data.userId == request.auth.uid ||
+           isAdmin()) &&
+          request.resource.data.senderId == request.auth.uid
+        );
+        
+        // Allow update only for read status
+        allow update: if isAuthenticated() && (
+          (get(/databases/$(database)/documents/supportThreads/$(threadId)).data.userId == request.auth.uid ||
+           isAdmin()) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        );
+        
+        // Only allow delete by admin
+        allow delete: if isAdmin();
+      }
+      
+      // Status history subcollection rules
+      match /statusHistory/{statusId} {
+        // Allow read if user is the owner of the thread or an admin
+        allow read: if isAuthenticated() && (
+          get(/databases/$(database)/documents/supportThreads/$(threadId)).data.userId == request.auth.uid ||
+          isAdmin()
+        );
+        
+        // Only allow create/update/delete by admin
+        allow create, update, delete: if isAdmin();
+      }
+    }
+    
+    // Community Posts rules
+    match /communityPosts/{postId} {
+      allow read: if true;
+      
+      // Allow create if authenticated and image size is valid
+      allow create: if isAuthenticated() && 
+        (!request.resource.data.keys().hasAny(['imageUrl']) || 
+        isValidImageSize(request.resource.data.imageUrl));
+      
+      // Allow update/delete if user is the post owner
+      allow update, delete: if isAuthenticated() && 
+        get(/databases/$(database)/documents/communityPosts/$(postId)).data.authorId == request.auth.uid;
+    }
+
+    // Comments rules
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      
+      // Allow update/delete if user is the comment owner
+      allow update, delete: if isAuthenticated() && 
+        resource.data.authorId == request.auth.uid;
+    }
+
+    // Post Likes rules
+    match /postLikes/{likeId} {
+      allow read: if true;
+      
+      // Allow create if authenticated and likeId matches pattern
+      allow create: if isAuthenticated() && 
+        likeId == request.resource.data.postId + "_" + request.auth.uid;
+      
+      // Allow delete if authenticated and user owns the like
+      allow delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+  }
+} 
