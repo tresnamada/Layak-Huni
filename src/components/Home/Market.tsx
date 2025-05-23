@@ -39,7 +39,7 @@ const Market = () => {
         >
           {/* First image */}
           <motion.div 
-            className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] rounded-xl rounded-tl-[120px] overflow-hidden shadow-lg group"
+            className="relative w-full h-[150px] sm:h-[400px] md:h-[500px] rounded-xl rounded-tl-[120px] overflow-hidden shadow-lg group"
             whileHover={{ 
               scale: 1.02,
               boxShadow: "0 20px 30px rgba(89, 76, 26, 0.2)",
@@ -66,7 +66,7 @@ const Market = () => {
 
           {/* Second image */}
           <motion.div 
-            className="relative w-full md:w-3/4 h-[250px] sm:h-[300px] md:h-[400px] ml-auto mt-4 md:mt-16 rounded-xl rounded-tr-[120px] overflow-hidden shadow-lg group"
+            className="relative w-full md:w-3/4 h-[150px] sm:h-[300px] md:h-[400px] ml-auto mt-4 md:mt-16 rounded-xl rounded-tr-[120px] overflow-hidden shadow-lg group"
             whileHover={{ 
               scale: 1.02,
               boxShadow: "0 20px 30px rgba(89, 76, 26, 0.2)",
