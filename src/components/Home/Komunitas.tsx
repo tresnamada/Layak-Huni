@@ -21,7 +21,7 @@ export default function Komunitas() {
   return (
     <motion.div 
       ref={containerRef}
-      className="p-4 sm:p-6 md:p-8 rounded-3xl max-w-7xl mx-auto my-8 min-h-screen flex items-center justify-center bg-[#F6F6EC]"
+      className="p-4 sm:p-6 md:p-8 rounded-3xl max-w-7xl mx-auto my-8 min-h-screen flex items-center justify-center bg-[#F6F6EC] mt-[300px] md:mt-[100px] md:mb-[100px]"
       variants={containerVariants}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
