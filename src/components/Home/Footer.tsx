@@ -5,8 +5,6 @@ import Link from 'next/link';
 
 const Footer = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -94,21 +92,19 @@ const Footer = () => {
               viewport={{ once: true }}
             >
               <Link href="/" className="block mb-6">
-                <img src="/LogoPutih.svg" alt="SiapHuni Logo" className="h-12" />
+                <img src="/icon/Logo.svg" alt="SiapHuni Logo" className="h-12" />
               </Link>
               <p className="text-[#594C1A]/80 mb-6">
                 Platform terpercaya untuk menemukan rumah siap huni berkualitas premium dengan proses yang mudah dan transparan.
               </p>
               <div className="flex gap-4">
-                {socialMedia.map((social, index) => (
+                {socialMedia.map((social) => (
                   <motion.a
                     key={social.name}
                     href="#"
                     className="w-10 h-10 rounded-full bg-[#594C1A]/10 flex items-center justify-center hover:bg-[#594C1A] hover:text-white transition-colors"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    onMouseEnter={() => setHoveredItem(social.name)}
-                    onMouseLeave={() => setHoveredItem(null)}
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                       <path d={social.icon} />
@@ -119,12 +115,12 @@ const Footer = () => {
             </motion.div>
 
             {/* Footer Links */}
-            {Object.entries(footerLinks).map(([title, items], index) => (
+            {Object.entries(footerLinks).map(([title, items]) => (
               <motion.div
                 key={title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
               >
                 <h3 className="text-lg font-semibold mb-4">{title}</h3>
@@ -138,8 +134,6 @@ const Footer = () => {
                       <Link
                         href="#"
                         className="text-[#594C1A]/80 hover:text-[#594C1A] transition-colors"
-                        onMouseEnter={() => setHoveredItem(`${title}-${item}`)}
-                        onMouseLeave={() => setHoveredItem(null)}
                       >
                         {item}
                       </Link>
