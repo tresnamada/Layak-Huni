@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 /**
  * Check if a user has admin privileges
@@ -37,20 +37,20 @@ export const setUserAsAdmin = async (userId: string): Promise<boolean> => {
   try {
     if (!userId) return false;
     
-    // Update the user's document in users collection
+    // Update the user's document in users collection, create if it doesn't exist
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       role: "admin",
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
     
     // For backward compatibility, also update profiles collection
     const profileRef = doc(db, 'profiles', userId);
-    await updateDoc(profileRef, {
+    await setDoc(profileRef, {
       role: "admin",
       isAdmin: true, // Keep this for backward compatibility
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
     
     return true;
   } catch (error) {
@@ -68,20 +68,20 @@ export const removeUserAsAdmin = async (userId: string): Promise<boolean> => {
   try {
     if (!userId) return false;
     
-    // Update the user's document in users collection
+    // Update the user's document in users collection, create if it doesn't exist
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       role: "user",
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
     
     // For backward compatibility, also update profiles collection
     const profileRef = doc(db, 'profiles', userId);
-    await updateDoc(profileRef, {
+    await setDoc(profileRef, {
       role: "user",
       isAdmin: false,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
     
     return true;
   } catch (error) {

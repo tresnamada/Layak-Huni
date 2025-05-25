@@ -6,17 +6,30 @@ export interface Material {
   quantity: number;
   unit: string;
   price: number;
+  imageUrl?: string;
 }
 
 export interface Room {
   name: string;
   area: number;
   description: string;
+  imageUrl?: string;
 }
 
 export interface Blueprint {
   url: string;
   description: string;
+  type: 'floor' | 'elevation' | 'section' | 'detail';
+  imageUrl: string;
+  name?: string;
+}
+
+export interface ConstructionStage {
+  name: string;
+  duration: number;
+  description: string;
+  imageUrl?: string;
+  status: 'pending' | 'in-progress' | 'completed';
 }
 
 export interface HouseData {
@@ -31,28 +44,12 @@ export interface HouseData {
   imageUrl: string;
   createdAt?: Timestamp;
   createdBy?: string;
-  // Simplified fields without arrays
-  mainMaterial: {
-    name: string;
-    quantity: number;
-    unit: string;
-    price: number;
-  };
-  mainRoom: {
-    name: string;
-    area: number;
-    description: string;
-  };
-  mainBlueprint: {
-    url: string;
-    description: string;
-  };
-  mainFeature: string;
-  mainConstructionStage: {
-    name: string;
-    duration: number;
-    description: string;
-  };
+  // Multiple items support
+  materials: Material[];
+  rooms: Room[];
+  blueprints: Blueprint[];
+  features: string[];
+  constructionStages: ConstructionStage[];
   specifications: {
     floorCount: number;
     bedroomCount: number;
@@ -77,28 +74,12 @@ export interface HouseFormData {
   material: string;
   durasi: number | string;
   description: string;
-  // Simplified fields without arrays
-  mainMaterial: {
-    name: string;
-    quantity: number | string;
-    unit: string;
-    price: number | string;
-  };
-  mainRoom: {
-    name: string;
-    area: number | string;
-    description: string;
-  };
-  mainBlueprint: {
-    url: string;
-    description: string;
-  };
-  mainFeature: string;
-  mainConstructionStage: {
-    name: string;
-    duration: number | string;
-    description: string;
-  };
+  // Multiple items support
+  materials: Material[];
+  rooms: Room[];
+  blueprints: Blueprint[];
+  features: string[];
+  constructionStages: ConstructionStage[];
   specifications: {
     floorCount: number | string;
     bedroomCount: number | string;
@@ -133,12 +114,6 @@ export const addHouse = async (
       throw new Error('Missing required fields: name, material, or image');
     }
 
-    // Log the data being processed
-    console.log('Processing house data:', {
-      ...houseData,
-      imageBase64Length: imageBase64.length
-    });
-
     // Convert string values to numbers and ensure proper formatting
     const processedData = {
       name: String(houseData.name || ''),
@@ -148,28 +123,35 @@ export const addHouse = async (
       tipe: String(houseData.tipe || ''),
       material: String(houseData.material || ''),
       description: String(houseData.description || ''),
-      // Simplified fields without arrays
-      mainMaterial: {
-        name: String(houseData.mainMaterial?.name || ''),
-        quantity: Number(houseData.mainMaterial?.quantity) || 0,
-        unit: String(houseData.mainMaterial?.unit || ''),
-        price: Number(houseData.mainMaterial?.price) || 0
-      },
-      mainRoom: {
-        name: String(houseData.mainRoom?.name || ''),
-        area: Number(houseData.mainRoom?.area) || 0,
-        description: String(houseData.mainRoom?.description || '')
-      },
-      mainBlueprint: {
-        url: String(houseData.mainBlueprint?.url || ''),
-        description: String(houseData.mainBlueprint?.description || '')
-      },
-      mainFeature: String(houseData.mainFeature || ''),
-      mainConstructionStage: {
-        name: String(houseData.mainConstructionStage?.name || ''),
-        duration: Number(houseData.mainConstructionStage?.duration) || 0,
-        description: String(houseData.mainConstructionStage?.description || '')
-      },
+      // Process arrays
+      materials: Array.isArray(houseData.materials) ? houseData.materials.map(m => ({
+        name: String(m.name || ''),
+        quantity: Number(m.quantity) || 0,
+        unit: String(m.unit || ''),
+        price: Number(m.price) || 0,
+        imageUrl: m.imageUrl || ''
+      })) : [],
+      rooms: Array.isArray(houseData.rooms) ? houseData.rooms.map(r => ({
+        name: String(r.name || ''),
+        area: Number(r.area) || 0,
+        description: String(r.description || ''),
+        imageUrl: r.imageUrl || ''
+      })) : [],
+      blueprints: Array.isArray(houseData.blueprints) ? houseData.blueprints.map(b => ({
+        url: String(b.url || ''),
+        description: String(b.description || ''),
+        type: b.type || 'floor',
+        imageUrl: b.imageUrl || '',
+        name: b.name || ''
+      })) : [],
+      features: Array.isArray(houseData.features) ? houseData.features.map(f => String(f || '')) : [],
+      constructionStages: Array.isArray(houseData.constructionStages) ? houseData.constructionStages.map(s => ({
+        name: String(s.name || ''),
+        duration: Number(s.duration) || 0,
+        description: String(s.description || ''),
+        imageUrl: s.imageUrl || '',
+        status: s.status || 'pending'
+      })) : [],
       specifications: {
         floorCount: Number(houseData.specifications?.floorCount) || 0,
         bedroomCount: Number(houseData.specifications?.bedroomCount) || 0,
@@ -186,12 +168,6 @@ export const addHouse = async (
       }
     };
 
-    // Log the processed data
-    console.log('Processed data:', {
-      ...processedData,
-      imageBase64: 'present'
-    });
-
     // Store base64 image directly in Firestore
     const docData = {
       ...processedData,
@@ -199,25 +175,12 @@ export const addHouse = async (
       createdAt: serverTimestamp(),
       ...(userId && { createdBy: userId })
     };
-    
-    // Log the final data structure (without the actual image data)
-    console.log('Final data structure:', {
-      ...docData,
-      imageUrl: 'present'
-    });
 
     // Add to Firestore
     const docRef = await addDoc(collection(db, 'houses'), docData);
-    console.log('Successfully added house with ID:', docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('Error adding house:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', {
-        message: error.message,
-        stack: error.stack
-      });
-    }
     throw error;
   }
 };

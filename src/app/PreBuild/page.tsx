@@ -94,9 +94,9 @@ export default function PreBuildPage() {
     // Sort the filtered houses
     return filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'price-asc':
+      case 'price-asc':
           return a.harga - b.harga;
-        case 'price-desc':
+      case 'price-desc':
           return b.harga - a.harga;
         case 'area-asc':
           return a.luas - b.luas;
@@ -247,7 +247,7 @@ export default function PreBuildPage() {
           >
             <div className="text-red-500 mb-4">
               <AlertCircle size={48} className="mx-auto" />
-            </div>
+                    </div>
             <p className="text-xl font-semibold text-gray-900 mb-2">{error}</p>
             <p className="text-gray-500">Please try again later</p>
             <button 
@@ -255,20 +255,20 @@ export default function PreBuildPage() {
               className="mt-4 px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
             >
               Retry
-            </button>
-          </motion.div>
+                  </button>
+            </motion.div>
         ) : filteredAndSortedHouses.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
             className="text-center py-20"
           >
             <div className="text-gray-400 mb-4">
               <Search size={48} className="mx-auto" />
-            </div>
+                </div>
             <p className="text-xl font-semibold text-gray-900 mb-2">No houses found</p>
             <p className="text-gray-500 mb-4">Try adjusting your filters or search term</p>
-            <button 
+                      <button 
               onClick={() => {
                 setSearchTerm('');
                 setSelectedType('all');
@@ -278,8 +278,8 @@ export default function PreBuildPage() {
               className="px-6 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
             >
               Clear All Filters
-            </button>
-          </motion.div>
+                    </button>
+            </motion.div>
         ) : (
           <motion.div 
             variants={containerVariants}
@@ -302,19 +302,19 @@ export default function PreBuildPage() {
             ))}
           </motion.div>
         )}
-      </div>
+        </div>
 
       {/* Mobile Filters Modal */}
       <AnimatePresence>
         {showMobileFilters && (
-          <motion.div
+          <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:hidden"
             onClick={() => setShowMobileFilters(false)}
           >
-            <motion.div
+            <motion.div 
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -324,8 +324,8 @@ export default function PreBuildPage() {
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Filters</h3>
                 <button onClick={() => setShowMobileFilters(false)}>×</button>
-              </div>
-              
+                  </div>
+                  
               {/* Mobile filter controls go here */}
               <div className="space-y-4">
                 {/* Type Filter */}
@@ -341,8 +341,8 @@ export default function PreBuildPage() {
                       <option key={type.value} value={type.value}>{type.label}</option>
                     ))}
                   </select>
-                </div>
-
+                    </div>
+                    
                 {/* Price Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
@@ -357,8 +357,8 @@ export default function PreBuildPage() {
                     <option value="500-1000">IDR 500M - 1B</option>
                     <option value="1000">IDR 1B+</option>
                   </select>
-                </div>
-
+                    </div>
+                    
                 {/* Area Filter */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Area Range</label>
@@ -373,16 +373,16 @@ export default function PreBuildPage() {
                     <option value="45-54">45 - 54 m²</option>
                     <option value="54">54+ m²</option>
                   </select>
-                </div>
-
+                      </div>
+                      
                 <button
-                  onClick={() => {
+                        onClick={() => {
                     setShowMobileFilters(false);
                   }}
                   className="w-full py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
                 >
                   Apply Filters
-                </button>
+                      </button>
               </div>
             </motion.div>
           </motion.div>
@@ -392,16 +392,16 @@ export default function PreBuildPage() {
       {/* Back to Top Button */}
       <AnimatePresence>
         {isScrolled && (
-          <motion.button 
-            initial={{ opacity: 0, y: 20 }}
+      <motion.button 
+        initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className="fixed bottom-6 right-6 bg-amber-500 hover:bg-amber-600 text-white p-3 rounded-full shadow-lg z-30 transition-colors"
-            whileHover={{ scale: 1.1 }}
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          >
-            <ChevronUp size={24} />
-          </motion.button>
+        whileHover={{ scale: 1.1 }}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      >
+        <ChevronUp size={24} />
+      </motion.button>
         )}
       </AnimatePresence>
     </div>

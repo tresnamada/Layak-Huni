@@ -10,6 +10,7 @@ import ImageUploader from '@/components/Admin/ImageUploader';
 import { addHouse, HouseFormData, Blueprint } from '@/services/houseService';
 import { isAdmin } from '@/services/adminService';
 import { useAdmin } from '@/hooks/useAdmin';
+import { compressImage } from '@/utils/imageCompression';
 
 interface FormError {
   [key: string]: string;
@@ -24,6 +25,8 @@ const BlueprintUploader: React.FC<BlueprintUploaderProps> = ({ onBlueprintChange
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUrlInput, setIsUrlInput] = useState(false);
   const [url, setUrl] = useState('');
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [blueprintName, setBlueprintName] = useState('');
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -35,34 +38,55 @@ const BlueprintUploader: React.FC<BlueprintUploaderProps> = ({ onBlueprintChange
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
-      handleImageUpload(file);
+      await handleImageUpload(file);
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      handleImageUpload(file);
+      await handleImageUpload(file);
     }
   };
 
-  const handleImageUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
+  const handleImageUpload = async (file: File) => {
+    try {
+      setIsCompressing(true);
+      const compressedImage = await compressImage(file, 100); // Compress to under 100KB
+      const base64String = compressedImage; // compressedImage is already base64
       setPreviewUrl(base64String);
       onBlueprintChange({
         url: base64String,
-        description: file.name
+        description: file.name,
+        type: 'floor',
+        imageUrl: base64String,
+        name: blueprintName || file.name // Include blueprint name, default to file name
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      // Fallback to original image if compression fails
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPreviewUrl(base64String);
+        onBlueprintChange({
+          url: base64String,
+          description: file.name,
+          type: 'floor',
+          imageUrl: base64String,
+          name: blueprintName || file.name // Include blueprint name, default to file name
+        });
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleUrlSubmit = () => {
@@ -70,55 +94,27 @@ const BlueprintUploader: React.FC<BlueprintUploaderProps> = ({ onBlueprintChange
       setPreviewUrl(url);
       onBlueprintChange({
         url: url,
-        description: 'Blueprint URL'
+        description: 'Blueprint URL',
+        type: 'floor',
+        imageUrl: url,
+        name: blueprintName || 'Blueprint from URL' // Include blueprint name, default name
       });
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4">
-        <button
-          type="button"
-          onClick={() => setIsUrlInput(false)}
-          className={`px-4 py-2 rounded-lg ${
-            !isUrlInput ? 'bg-amber-800 text-white' : 'bg-gray-100 text-gray-700'
-          }`}
-        >
-          Upload Image
-        </button>
-        <button
-          type="button"
-          onClick={() => setIsUrlInput(true)}
-          className={`px-4 py-2 rounded-lg ${
-            isUrlInput ? 'bg-amber-800 text-white' : 'bg-gray-100 text-gray-700'
-          }`}
-        >
-          Enter URL
-        </button>
-      </div>
-
-      {isUrlInput ? (
-        <div className="space-y-2">
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter blueprint URL"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-          />
-          <button
-            type="button"
-            onClick={handleUrlSubmit}
-            className="px-4 py-2 bg-amber-800 text-white rounded-lg hover:bg-amber-700"
-          >
-            Add URL
-          </button>
-        </div>
-      ) : (
+      <input
+        type="text"
+        value={blueprintName}
+        onChange={(e) => setBlueprintName(e.target.value)}
+        placeholder="Enter blueprint name (e.g., Ground Floor Plan)"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+      />
+      {!isUrlInput ? (
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center ${
-            isDragging ? 'border-amber-800 bg-amber-50' : 'border-gray-300'
+          className={`border-2 border-dashed rounded-lg p-6 text-center ${
+            isDragging ? 'border-amber-500 bg-amber-50' : 'border-gray-300'
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -133,28 +129,44 @@ const BlueprintUploader: React.FC<BlueprintUploaderProps> = ({ onBlueprintChange
           />
           <label
             htmlFor="blueprint-upload"
-            className="cursor-pointer flex flex-col items-center gap-2"
+            className="cursor-pointer block"
           >
-            <Upload size={24} className="text-gray-400" />
-            <p className="text-gray-600">
-              Drag and drop an image here, or click to select
-            </p>
-            <p className="text-sm text-gray-500">
-              Supported formats: JPG, PNG, GIF
+            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-600">
+              {isCompressing ? 'Compressing image...' : 'Drag and drop a blueprint image, or click to select'}
             </p>
           </label>
         </div>
+      ) : (
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Enter blueprint URL"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <button
+            onClick={handleUrlSubmit}
+            className="w-full px-4 py-2 bg-amber-800 text-white rounded-lg hover:bg-amber-700"
+          >
+            Add URL
+          </button>
+        </div>
       )}
-
+      <button
+        onClick={() => setIsUrlInput(!isUrlInput)}
+        className="text-sm text-amber-800 hover:text-amber-700"
+      >
+        {isUrlInput ? 'Upload file instead' : 'Enter URL instead'}
+      </button>
       {previewUrl && (
         <div className="mt-4">
-          <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
-            <img
-              src={previewUrl}
-              alt="Blueprint preview"
-              className="w-full h-full object-contain"
-            />
-          </div>
+          <img
+            src={previewUrl}
+            alt="Blueprint preview"
+            className="max-w-full h-auto rounded-lg"
+          />
         </div>
       )}
     </div>

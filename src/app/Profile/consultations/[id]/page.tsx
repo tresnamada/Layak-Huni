@@ -7,8 +7,9 @@ import { getConsultation, type Consultation } from "@/services/consultationServi
 import { getMessages, sendMessage, markMessagesAsRead, type ChatMessage } from "@/services/chatService"
 import { getUserData } from "@/services/userService"
 import { useRouter } from "next/navigation"
-import { FiArrowLeft, FiLoader, FiSend, FiInfo, FiClock, FiUser } from "react-icons/fi"
+import { FiArrowLeft, FiLoader, FiSend, FiInfo, FiClock, FiUser, FiMessageSquare } from "react-icons/fi"
 import Navbar from "@/components/Navbar"
+import { motion } from "framer-motion"
 
 export default function ConsultationChatPage({ params }: { params: { id: string } }) {
   const { user, loading: authLoading } = useAuth({ redirectToLogin: true })
@@ -22,6 +23,8 @@ export default function ConsultationChatPage({ params }: { params: { id: string 
   const [sendingMessage, setSendingMessage] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [userName, setUserName] = useState("")
+  const [otherParticipantName, setOtherParticipantName] = useState("")
+  const [isCurrentUserArchitect, setIsCurrentUserArchitect] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -80,6 +83,24 @@ export default function ConsultationChatPage({ params }: { params: { id: string 
 
       if (consultResult.success && consultResult.consultation) {
         setConsultation(consultResult.consultation)
+
+        // Determine current user's role in this consultation
+        const currentUserIsArchitect = user.uid === consultResult.consultation.architectId;
+        setIsCurrentUserArchitect(currentUserIsArchitect);
+
+        // Fetch other participant's name
+        const otherParticipantId = currentUserIsArchitect ? consultResult.consultation.userId : consultResult.consultation.architectId;
+        if (otherParticipantId) {
+          const otherUserResult = await getUserData(otherParticipantId);
+          if (otherUserResult.success && otherUserResult.userData) {
+            setOtherParticipantName(otherUserResult.userData.displayName || otherUserResult.userData.email || "Partisipan");
+          } else {
+            console.error("Failed to fetch other participant data:", otherUserResult.error);
+            setOtherParticipantName("Partisipan Tidak Dikenal");
+          }
+        } else {
+            setOtherParticipantName("Menunggu Arsitek Ditugaskan");
+        }
 
         // Fetch messages
         await fetchMessages()
@@ -173,98 +194,144 @@ export default function ConsultationChatPage({ params }: { params: { id: string 
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-[#F6F6EC] to-[#EAE0D0] flex flex-col font-sans">
       <Navbar />
 
-      <div className="flex-grow container max-w-6xl mx-auto px-4 py-6 flex flex-col">
-        <button
+      <div className="flex-grow container max-w-6xl mx-auto px-4 py-8 flex flex-col">
+        <motion.button
           onClick={() => router.push("/Profile/consultations")}
-          className="flex items-center text-amber-700 hover:text-amber-900 mb-4 transition-colors duration-200 font-medium"
+          className="flex items-center text-[#594C1A] hover:text-[#938656] mb-6 transition-colors duration-200 font-medium"
+          whileHover={{ x: -5 }}
         >
           <FiArrowLeft className="mr-2" />
           Kembali ke Daftar Konsultasi
-        </button>
+        </motion.button>
 
         {authLoading || loading ? (
           <div className="flex items-center justify-center h-64">
-            <FiLoader className="animate-spin text-amber-600 w-10 h-10" />
+            <FiLoader className="animate-spin text-[#594C1A] w-10 h-10" />
           </div>
         ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-xl shadow-sm">{error}</div>
+          <motion.div 
+            className="bg-red-100 border border-red-300 text-red-700 px-6 py-4 rounded-xl shadow-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {error}
+          </motion.div>
         ) : consultation ? (
-          <div className="bg-white shadow-xl rounded-2xl overflow-hidden flex-grow flex flex-col border border-amber-100">
+          <motion.div
+            className="bg-white shadow-xl rounded-[2rem] overflow-hidden flex-grow flex flex-col border border-[#EAE0D0]"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
             {/* Chat Header */}
-            <div className="bg-gradient-to-r from-amber-800 to-amber-700 text-white p-6">
-              <h1 className="text-2xl font-bold mb-2">{consultation.designData.name}</h1>
-              <p className="text-sm text-amber-100">
-                {consultation.status === "pending" ? (
-                  <span className="flex items-center bg-amber-600/30 px-3 py-1 rounded-full">
-                    <FiClock className="mr-2" />
-                    Menunggu arsitek tersedia
-                  </span>
-                ) : consultation.status === "active" ? (
-                  <span className="flex items-center bg-green-600/30 px-3 py-1 rounded-full">
-                    <FiUser className="mr-2" />
-                    Konsultasi dengan Arsitek
-                  </span>
-                ) : null}
-              </p>
+            <div className="bg-gradient-to-r from-[#594C1A] to-[#938656] text-white p-6 sm:p-8 border-b border-[#938656]/50 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('/patterns/dots.svg')] bg-repeat opacity-10" />
+              <div className="relative z-10">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2 tracking-wide">{consultation.designData.name}</h1>
+                <p className="text-sm sm:text-base text-[#F6F6EC]/80 mb-2">{consultation.designData.description}</p>
+
+                {/* Display who the user is chatting with */}
+                {otherParticipantName && (consultation.status === 'active' || consultation.status === 'completed') && (
+                   <p className="text-sm sm:text-base text-[#F6F6EC]/90 font-semibold mt-2">
+                    {isCurrentUserArchitect ? 'Anda Berbicara Dengan Pengguna:' : 'Anda Berbicara Dengan Arsitek:'} {otherParticipantName}
+                   </p>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-[#F6F6EC] mt-4">
+                  <div className="flex items-center">
+                    <FiInfo className="mr-2 w-5 h-5" />
+                    <span>Gaya: {consultation.designData.style || 'Belum ditentukan'}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FiClock className="mr-2 w-5 h-5" />
+                    <span>Dibuat: {formatDate(consultation.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <FiUser className="mr-2 w-5 h-5" />
+                    <span>Status: {
+                      consultation.status === "pending" ? (
+                        'Menunggu Arsitek'
+                      ) : consultation.status === "active" ? (
+                        'Aktif'
+                      ) : consultation.status === "completed" ? (
+                        'Selesai'
+                      ) : consultation.status === "cancelled" ? (
+                        'Dibatalkan'
+                      ) : 'Tidak Diketahui'
+                    }</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Chat Messages */}
             <div
-              className="flex-grow p-6 overflow-y-auto bg-gradient-to-b from-white to-amber-25"
-              style={{ maxHeight: "calc(100vh - 300px)" }}
+              className="flex-grow p-6 sm:p-8 overflow-y-auto bg-gradient-to-b from-white to-[#F6F6EC]/50"
+              style={{ maxHeight: "calc(100vh - 350px)" }} // Adjusted max height
             >
               {consultation.status === "pending" ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center p-8 bg-amber-50 rounded-2xl border border-amber-200 shadow-sm">
-                    <FiClock className="mx-auto text-amber-600 text-4xl mb-4" />
-                    <h3 className="font-bold text-2xl text-amber-900 mb-3">Menunggu Arsitek</h3>
-                    <p className="text-amber-700 leading-relaxed max-w-md">
+                <div className="flex items-center justify-center h-full text-center px-4">
+                  <motion.div 
+                    className="p-8 bg-[#F6F6EC] rounded-2xl border border-[#EAE0D0] shadow-md max-w-sm"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", duration: 0.7 }}
+                  >
+                    <FiClock className="mx-auto text-[#594C1A]/50 text-5xl mb-4" />
+                    <h3 className="font-bold text-2xl text-[#594C1A] mb-3">Menunggu Arsitek</h3>
+                    <p className="text-[#594C1A]/80 leading-relaxed">
                       Permintaan konsultasi Anda sedang menunggu arsitek yang tersedia. Anda akan mendapatkan notifikasi
-                      saat arsitek tersedia untuk konsultasi.
+                      saat arsitek menerima permintaan Anda.
                     </p>
-                  </div>
+                  </motion.div>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center p-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl border border-amber-200 shadow-sm">
-                    <FiInfo className="mx-auto text-amber-600 text-4xl mb-4" />
-                    <h3 className="font-bold text-2xl text-amber-900 mb-3">Mulai Konsultasi</h3>
-                    <p className="text-amber-700 leading-relaxed max-w-md">
-                      Silakan mulai konsultasi dengan mengirimkan pesan kepada arsitek. Anda bisa bertanya tentang
-                      detail desain, saran, atau hal lain terkait desain rumah Anda.
+                <div className="flex items-center justify-center h-full text-center px-4">
+                  <motion.div
+                    className="p-8 bg-[#F6F6EC] rounded-2xl border border-[#EAE0D0] shadow-md max-w-sm"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", duration: 0.7 }}
+                  >
+                    <FiMessageSquare className="mx-auto text-[#594C1A]/50 text-5xl mb-4" />
+                    <h3 className="font-bold text-2xl text-[#594C1A] mb-3">Mulai Percakapan</h3>
+                    <p className="text-[#594C1A]/80 leading-relaxed">
+                      Belum ada pesan dalam konsultasi ini. Kirim pesan pertama Anda untuk memulai percakapan dengan arsitek.
                     </p>
-                  </div>
+                  </motion.div>
                 </div>
               ) : (
                 <>
                   {messages.map((message, index) => (
-                    <div
+                    <motion.div
                       key={message.id || index}
                       className={`mb-4 ${message.senderId === user?.uid ? "text-right" : "text-left"}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
                       <div
-                        className={`inline-block px-5 py-3 rounded-2xl max-w-xs lg:max-w-md shadow-sm ${
-                          message.senderId === user?.uid
-                            ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white"
-                            : "bg-white text-amber-900 border border-amber-100"
-                        }`}
+                        className={`inline-block px-5 py-3 rounded-2xl max-w-xs lg:max-w-md shadow-md ${message.senderId === user?.uid
+                          ? "bg-gradient-to-r from-[#938656] to-[#594C1A] text-white"
+                          : "bg-white text-[#594C1A] border border-[#EAE0D0]"}
+                        `}
                       >
-                        <p className="text-sm font-semibold mb-2 opacity-90">
-                          {message.senderId === user?.uid ? "Anda" : message.senderName}
-                        </p>
-                        <p className="leading-relaxed">{message.message}</p>
-                        <p
-                          className={`text-xs mt-2 ${
-                            message.senderId === user?.uid ? "text-amber-200" : "text-amber-500"
-                          }`}
-                        >
-                          {formatMessageTime(message.timestamp)}
+                        <p className="text-sm break-words">{message.message}</p>
+                        {/* Display sender name/role for received messages */}
+                        {message.senderId !== user?.uid && consultation && (
+                          <p className="text-xs text-[#594C1A]/60 mt-1">
+                            {message.senderId === consultation.architectId ? 'Arsitek' : 'Pengguna'}: {message.senderName}
+                          </p>
+                        )}
+                        <p className={`text-xs mt-1 ${message.senderId === user?.uid ? "text-white/70" : "text-[#594C1A]/50"}`}>
+                          {/* Safely format timestamp */}
+                          {message.timestamp ? formatMessageTime(new Date(message.timestamp.seconds * 1000).toISOString()) : ''}
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                   <div ref={messagesEndRef} />
                 </>
@@ -306,7 +373,7 @@ export default function ConsultationChatPage({ params }: { params: { id: string 
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         ) : (
           <div className="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-xl shadow-sm">
             Konsultasi tidak ditemukan

@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { ArrowLeft, Image, Send, Paperclip, Smile, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -25,7 +25,8 @@ interface DiskusiDetail {
   messages: Message[];
 }
 
-export default function DiskusiDetail({ params }: { params: { id: string } }) {
+export default function DiskusiDetail({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const [diskusi, setDiskusi] = useState<DiskusiDetail | null>(null);
   const [newMessage, setNewMessage] = useState<string>('');
@@ -39,7 +40,7 @@ export default function DiskusiDetail({ params }: { params: { id: string } }) {
     // Simulasi loading data diskusi berdasarkan ID
     setTimeout(() => {
       setDiskusi({
-        id: parseInt(params.id),
+        id: parseInt(resolvedParams.id),
         title: "Ide Ruang Tamu Minimalis Modern",
         participantsCount: 47,
         participants: [
@@ -103,7 +104,7 @@ export default function DiskusiDetail({ params }: { params: { id: string } }) {
       });
       setIsLoading(false);
     }, 1000);
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   useEffect(() => {
     scrollToBottom();

@@ -2,235 +2,256 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../hooks/useAuth';
-import { getAllOpenSupportThreads, updateSupportThreadStatus } from '../../../services/supportService';
-import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { getAllOpenSupportThreads, SupportThread } from '@/services/supportService';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { 
+  MessageSquare,
+  Loader2,
+  Clock,
+  User,
+  Search,
+  Filter,
+  ChevronDown,
+  ChevronUp,
+  Menu
+} from 'lucide-react';
+import Sidebar from '@/components/Sidebar';
 
 export default function AdminSupportPage() {
-  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [threads, setThreads] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [statusUpdating, setStatusUpdating] = useState(null);
+  const { user } = useAuth();
+  const [threads, setThreads] = useState<SupportThread[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in-progress' | 'closed'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const loadSupportThreads = async () => {
-      if (!user || authLoading) return;
+    if (!user) {
+      router.push('/Login');
+      return;
+    }
       
-      // Verify user is admin
-      if (!user.role === 'admin') {
-        setError('You do not have permission to access this page');
-        setIsLoading(false);
-        return;
-      }
-      
+    const loadThreads = async () => {
       try {
-        setIsLoading(true);
-        const { success, threads: supportThreads, error } = await getAllOpenSupportThreads();
-        
-        if (success) {
-          setThreads(supportThreads);
-        } else {
-          setError(error || 'Failed to load support threads');
+        const { success, threads: threadData } = await getAllOpenSupportThreads();
+        if (success && threadData) {
+          setThreads(threadData);
         }
       } catch (err) {
-        console.error('Error loading support threads:', err);
-        setError('An unexpected error occurred');
+        console.error('Error loading threads:', err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
-    loadSupportThreads();
-  }, [user, authLoading]);
+    loadThreads();
 
-  const handleUpdateStatus = async (threadId, newStatus) => {
-    try {
-      setStatusUpdating(threadId);
-      
-      const { success, error } = await updateSupportThreadStatus(
-        threadId, 
-        newStatus,
-        user.uid,
-        'Admin Support'
-      );
-      
-      if (success) {
-        // Update the thread status in the local state
-        setThreads(prevThreads => 
-          prevThreads.map(thread => 
-            thread.id === threadId 
-              ? { ...thread, status: newStatus } 
-              : thread
-          )
-        );
-      } else {
-        setError(error || `Failed to update thread ${threadId} status`);
-      }
-    } catch (err) {
-      console.error('Error updating thread status:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setStatusUpdating(null);
-    }
-  };
+    // Subscribe to real-time updates
+    const threadsRef = collection(db, 'supportThreads');
+    const q = query(threadsRef, orderBy('updatedAt', 'desc'));
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="container mx-auto p-4 flex justify-center items-center h-[50vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading support threads...</p>
-        </div>
-      </div>
-    );
-  }
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newThreads: SupportThread[] = [];
+      snapshot.forEach((doc) => {
+        newThreads.push({
+          id: doc.id,
+          ...doc.data()
+        } as SupportThread);
+      });
+      setThreads(newThreads);
+    });
+
+    return () => unsubscribe();
+  }, [router, user]);
+
+  const filteredThreads = threads.filter(thread => {
+    const matchesSearch = 
+      thread.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      thread.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      thread.userEmail.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || thread.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || thread.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
 
   if (!user) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-6 rounded-lg">
-          <h2 className="text-xl font-bold mb-3">Login Required</h2>
-          <p>You need to be logged in as an admin to view this page.</p>
-          <button 
-            onClick={() => router.push('/login')}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
-          >
-            Log In
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
-  if (error && error === 'You do not have permission to access this page') {
+  if (loading) {
     return (
-      <div className="container mx-auto p-4">
-        <div className="bg-red-100 border border-red-300 text-red-800 p-6 rounded-lg">
-          <h2 className="text-xl font-bold mb-3">Access Denied</h2>
-          <p>You do not have permission to access the admin support dashboard.</p>
-          <button 
-            onClick={() => router.push('/')}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
-          >
-            Go to Homepage
-          </button>
+      <div className="min-h-screen bg-[#F6F6EC]">
+        <div className="pt-24 pb-12 px-4 flex items-center justify-center h-[calc(100vh-6rem)]">
+          <Loader2 className="w-8 h-8 text-[#594C1A] animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-700 to-indigo-800 p-4 text-white">
-          <h1 className="text-2xl font-bold">Admin Support Dashboard</h1>
-          <p className="text-sm opacity-90">Manage user support requests</p>
-        </div>
-        
-        {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
-            <p>{error}</p>
+    <div className="min-h-screen bg-[#F6F6EC] flex">
+      {/* Sidebar Component */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Main Content */}
+      <div className="flex-1 transition-all duration-300 lg:ml-64">
+        {/* Header */}
+        <div className="bg-white shadow-sm sticky top-0 z-40">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-3 sm:py-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 text-gray-600 hover:text-gray-900"
+              >
+                <Menu size={24} />
+              </button>
+            </div>
           </div>
-        )}
-        
-        <div className="p-4">
-          <h2 className="text-lg font-semibold mb-3">Open Support Threads</h2>
-          
-          {threads.length === 0 ? (
-            <div className="p-6 text-center text-gray-500 border rounded">
-              <p>There are no open support threads at this time.</p>
+        </div>
+
+        {/* Content */}
+        <div className="p-3 sm:p-4 md:p-6">
+          <div className="mb-4 sm:mb-6 md:mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Daftar Permintaan Bantuan</h1>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
+              Kelola dan respons permintaan bantuan dari pengguna
+            </p>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 md:mb-8">
+            <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center">
+              <div className="flex-1 w-full">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+                  <input
+                    type="text"
+                    placeholder="Cari berdasarkan subjek, nama pengguna, atau email..."
+                    value={searchQuery}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 sm:gap-4 w-full md:w-auto">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="w-full md:w-auto inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
+                >
+                  <Filter size={16} className="mr-2" />
+                  Filter
+                  {showFilters ? <ChevronUp size={16} className="ml-2" /> : <ChevronDown size={16} className="ml-2" />}
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {threads.map((thread) => (
-                    <tr key={thread.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          <Link href={`/support/${thread.id}`} className="hover:underline text-blue-600">
-                            {thread.subject}
-                          </Link>
-                        </div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {thread.lastMessage || 'No messages yet'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{thread.userName}</div>
-                        <div className="text-sm text-gray-500">{thread.userEmail}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${thread.status === 'open' ? 'bg-green-100 text-green-800' : 
-                          thread.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
-                          'bg-gray-100 text-gray-800'}`}
-                        >
-                          {thread.status === 'open' ? 'Open' : 
-                          thread.status === 'in-progress' ? 'In Progress' : 
-                          'Closed'}
+            {showFilters && (
+              <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</label>
+                  <select
+                    id="statusFilter"
+                    value={statusFilter}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value as 'all' | 'open' | 'in-progress' | 'closed')}
+                    className="block w-full px-3 py-2 text-sm sm:text-base border-gray-300 focus:outline-none focus:ring-[#594C1A] focus:border-[#594C1A] rounded-lg"
+                  >
+                    <option value="all">Semua Status</option>
+                    <option value="open">Terbuka</option>
+                    <option value="in-progress">Dalam Proses</option>
+                    <option value="closed">Ditutup</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="priorityFilter" className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Prioritas</label>
+                  <select
+                    id="priorityFilter"
+                    value={priorityFilter}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPriorityFilter(e.target.value as 'all' | 'low' | 'medium' | 'high')}
+                    className="block w-full px-3 py-2 text-sm sm:text-base border-gray-300 focus:outline-none focus:ring-[#594C1A] focus:border-[#594C1A] rounded-lg"
+                  >
+                    <option value="all">Semua Prioritas</option>
+                    <option value="high">Tinggi</option>
+                    <option value="medium">Sedang</option>
+                    <option value="low">Rendah</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Threads List */}
+          <div className="space-y-3 sm:space-y-4">
+            {filteredThreads.map((thread) => (
+              <div
+                key={thread.id}
+                className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => router.push(`/Admin/support/${thread.id}`)}
+              >
+                <div className="p-3 sm:p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900">{thread.subject}</h3>
+                        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                          thread.status === 'open' 
+                            ? 'bg-green-100 text-green-800'
+                            : thread.status === 'in-progress'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {thread.status === 'open' ? 'Terbuka' : 
+                           thread.status === 'in-progress' ? 'Dalam Proses' : 'Ditutup'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${thread.priority === 'high' ? 'bg-red-100 text-red-800' : 
-                          thread.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-gray-100 text-gray-800'}`}
-                        >
-                          {thread.priority === 'high' ? 'High' : 
-                          thread.priority === 'medium' ? 'Medium' : 
-                          'Low'}
+                        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                          thread.priority === 'high'
+                            ? 'bg-red-100 text-red-800'
+                            : thread.priority === 'medium'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {thread.priority.charAt(0).toUpperCase() + thread.priority.slice(1)} Prioritas
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {thread.createdAt?.toDate().toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Link 
-                            href={`/support/${thread.id}`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            View
-                          </Link>
-                          
-                          {statusUpdating === thread.id ? (
-                            <span className="text-gray-400">Updating...</span>
-                          ) : thread.status === 'open' ? (
-                            <button 
-                              onClick={() => handleUpdateStatus(thread.id, 'in-progress')}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              Take
-                            </button>
-                          ) : thread.status === 'in-progress' ? (
-                            <button 
-                              onClick={() => handleUpdateStatus(thread.id, 'closed')}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Close
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                      </div>
+                      <div className="flex items-center text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                        <User className="w-4 h-4 mr-2" />
+                        <span>{thread.userName}</span>
+                        <span className="mx-2">•</span>
+                        <span>{thread.userEmail}</span>
+                        <span className="mx-2">•</span>
+                        <Clock className="w-4 h-4 mr-1" />
+                        <span>
+                          {thread.createdAt.toDate().toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-sm sm:text-base text-gray-600 line-clamp-2">{thread.lastMessage}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {filteredThreads.length === 0 && (
+              <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8 text-center">
+                <MessageSquare className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Tidak Ada Permintaan Bantuan Ditemukan</h3>
+                <p className="text-sm sm:text-base text-gray-600">
+                  {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
+                    ? 'Coba sesuaikan pencarian atau filter Anda'
+                    : 'Saat ini belum ada permintaan bantuan'}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getGeneratedDesign, GeneratedDesign } from '@/services/designService';
 import { createConsultation } from '@/services/consultationService';
@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiLoader, FiHome, FiDollarSign, FiFeather, FiCheck, FiLayers, FiMessageSquare } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
 
-export default function DesignDetailPage({ params }: { params: { id: string } }) {
+export default function DesignDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const { user, loading: authLoading } = useAuth({ redirectToLogin: true });
   const router = useRouter();
-  const designId = params.id;
+  const designId = resolvedParams.id;
   
   const [design, setDesign] = useState<GeneratedDesign | null>(null);
   const [loading, setLoading] = useState(true);

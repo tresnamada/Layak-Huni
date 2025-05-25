@@ -1,7 +1,6 @@
 // components/SiHuniHomeDesign.jsx
 import { useState, useEffect, useRef } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
 export default function SiHuniHomeDesign() {
   const containerRef = useRef(null);
@@ -153,13 +152,15 @@ export default function SiHuniHomeDesign() {
               onHoverEnd={() => setIsHovered(false)}
             >
               <div className="absolute inset-0 bg-[#594C1A]/5 rounded-full filter blur-xl transform scale-90" />
-              <Image
-                src="/SiHuni.svg"
-                alt="SiHuni Character"
-                layout="fill"
-                className="object-contain drop-shadow-2xl"
-                priority
-              />
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="object-contain w-full h-full"
+              >
+                <source src="/animation.mp4" type="video/mp4" />
+              </video>
               {isHovered && (
                 <motion.div
                   className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white px-4 py-2 rounded-full shadow-lg"

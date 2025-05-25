@@ -10,6 +10,7 @@ import { isProfileComplete } from '@/services/profileService';
 import { useRouter, usePathname } from 'next/navigation';
 import { app } from '@/firebase';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useArchitect } from '@/hooks/useArchitect';
 
 // Initialize Firebase Auth
 const auth = getAuth(app);
@@ -20,6 +21,7 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { isAdminUser } = useAdmin();
+  const { isArchitectUser } = useArchitect();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
@@ -98,7 +100,7 @@ export default function Navbar() {
       </motion.div>
 
       {/* Dropdown Menu */}
-      <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+      <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]">
         <div 
           className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-gray-700 flex items-center gap-2"
           onClick={handleProfileClick}
@@ -115,11 +117,20 @@ export default function Navbar() {
             </div>
           </Link>
         )}
+
+        {isArchitectUser && (
+          <Link href="/Architect/dashboard">
+            <div className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-gray-700 flex items-center gap-2">
+              <Settings size={16} />
+              <span>Arsitek Panel</span>
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   );
 
-  // Update the mobile profile section to include admin option
+  // Update the mobile profile section to include architect option
   const MobileProfileSection = () => (
     <div className="pt-4 mt-4 border-t border-gray-100">
       {isLoggedIn ? (
@@ -143,6 +154,19 @@ export default function Navbar() {
               >
                 <Settings size={20} />
                 <span className="font-medium">Admin Panel</span>
+              </motion.div>
+            </Link>
+          )}
+
+          {isArchitectUser && (
+            <Link href="/Architect">
+              <motion.div
+                whileHover={{ x: 10 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center space-x-4 p-3 rounded-xl text-gray-600 hover:bg-gray-50"
+              >
+                <Settings size={20} />
+                <span className="font-medium">Arsitek Panel</span>
               </motion.div>
             </Link>
           )}
@@ -175,7 +199,7 @@ export default function Navbar() {
   return (
     <>
       {/* Desktop Navigation */}
-      <div className="relative z-10 w-full hidden md:block">
+      <div className="relative z-50 w-full hidden md:block">
         <nav className="flex items-center justify-between py-8 md:justify-center">
           <motion.div
             initial={{ opacity: 0, y: -10 }}

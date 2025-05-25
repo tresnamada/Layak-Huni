@@ -1,225 +1,354 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { isAdmin } from '@/services/adminService';
-import { useRouter } from 'next/navigation';
-import { app } from '@/firebase';
-import Link from 'next/link';
-import { 
-  ChevronLeft, 
-  Users, 
-  Home, 
-  Settings, 
-  BarChart2, 
-  MessageSquare, 
-  FileText,
-  Shield,
-  Bell,
+import { collection, query, getDocs, where } from 'firebase/firestore';
+import { db } from '@/firebase';
+import {
+  Menu,
+  Users,
+  Home,
   Package,
-  Truck
+  HelpCircle
 } from 'lucide-react';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import Sidebar from '@/components/Sidebar';
+import Link from 'next/link';
 
-const auth = getAuth(app);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+interface UserStats {
+  total: number;
+  customers: number;
+  admins: number;
+}
+
+interface HouseStats {
+  total: number;
+  minimalis: number;
+  modern: number;
+  tradisional: number;
+}
+
+interface MaterialStats {
+  total: number;
+  pending: number;
+  processing: number;
+  shipped: number;
+  delivered: number;
+}
 
 export default function AdminDashboard() {
+  const [userStats, setUserStats] = useState<UserStats>({
+    total: 0,
+    customers: 0,
+    admins: 0
+  });
+  const [houseStats, setHouseStats] = useState<HouseStats>({
+    total: 0,
+    minimalis: 0,
+    modern: 0,
+    tradisional: 0
+  });
+  const [materialStats, setMaterialStats] = useState<MaterialStats>({
+    total: 0,
+    pending: 0,
+    processing: 0,
+    shipped: 0,
+    delivered: 0
+  });
   const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
+  const auth = getAuth();
 
   useEffect(() => {
-    const checkAdminStatus = async (userId: string) => {
-      const adminStatus = await isAdmin(userId);
-      setAuthorized(adminStatus);
-      setLoading(false);
-
-      if (!adminStatus) {
-        router.push('/');
-      }
-    };
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        checkAdminStatus(user.uid);
-      } else {
-        setLoading(false);
-        setAuthorized(false);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
         router.push('/Login');
+        return;
+      }
+
+      try {
+        const adminStatus = await isAdmin(user.uid);
+        if (!adminStatus) {
+          router.push('/');
+          return;
+        }
+
+        // Load user statistics
+        const usersRef = collection(db, 'users');
+        const usersSnapshot = await getDocs(usersRef);
+        const users = usersSnapshot.docs.map(doc => doc.data());
+        
+        setUserStats({
+          total: users.length,
+          customers: users.filter(user => user.role === 'customer').length,
+          admins: users.filter(user => user.role === 'admin').length
+        });
+
+        // Load house statistics
+        const housesRef = collection(db, 'houses');
+        const housesSnapshot = await getDocs(housesRef);
+        const houses = housesSnapshot.docs.map(doc => doc.data());
+        
+        setHouseStats({
+          total: houses.length,
+          minimalis: houses.filter(house => house.tipe === 'minimalis').length,
+          modern: houses.filter(house => house.tipe === 'modern').length,
+          tradisional: houses.filter(house => house.tipe === 'tradisional').length
+        });
+
+        // Load material statistics
+        const purchasesRef = collection(db, 'purchases');
+        const purchasesQuery = query(purchasesRef, where('status', '!=', 'cancelled'));
+        const purchasesSnapshot = await getDocs(purchasesQuery);
+        const purchases = purchasesSnapshot.docs.map(doc => doc.data());
+        
+        const materials = purchases.flatMap(purchase => purchase.materials || []);
+        setMaterialStats({
+          total: materials.length,
+          pending: materials.filter(m => m.status === 'pending').length,
+          processing: materials.filter(m => m.status === 'processing').length,
+          shipped: materials.filter(m => m.status === 'shipped').length,
+          delivered: materials.filter(m => m.status === 'delivered').length
+        });
+
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+        setError('Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+        setIsCheckingAuth(false);
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, [router, auth]);
 
-  if (loading) {
+  const chartData = {
+    labels: ['Minimalis', 'Modern', 'Tradisional'],
+    datasets: [
+      {
+        label: 'Jumlah Rumah',
+        data: [houseStats.minimalis, houseStats.modern, houseStats.tradisional],
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+        tension: 0.4,
+        fill: true
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: 'Distribusi Tipe Rumah'
+      }
+    }
+  };
+
+  if (isCheckingAuth || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F6F6EC]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-amber-800 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memeriksa izin akses...</p>
-        </div>
+      <div className="min-h-screen bg-[#F6F6EC] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#594C1A] border-t-transparent"></div>
       </div>
     );
   }
 
-  if (!authorized) {
-    return null;
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F6F6EC] flex flex-col items-center justify-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={() => router.back()}
+          className="flex items-center text-[#594C1A] hover:text-[#938656]"
+        >
+          <span>Kembali</span>
+        </button>
+      </div>
+    );
   }
 
-  const adminFeatures = [
-    {
-      title: "Manajemen Pengguna",
-      description: "Kelola pengguna dan hak akses",
-      icon: Users,
-      href: "/Admin/Users",
-      color: "bg-blue-50",
-      iconColor: "text-blue-600"
-    },
-    {
-      title: "Manajemen Rumah",
-      description: "Kelola rumah prebuilt",
-      icon: Home,
-      href: "/Admin/Houses",
-      color: "bg-green-50",
-      iconColor: "text-green-600"
-    },
-    {
-      title: "Tracking Material",
-      description: "Kelola status pengiriman material",
-      icon: Package,
-      href: "/Admin/MaterialTracking",
-      color: "bg-orange-50",
-      iconColor: "text-orange-600"
-    },
-    {
-      title: "Analitik",
-      description: "Lihat statistik dan laporan",
-      icon: BarChart2,
-      href: "/Admin/Analytics",
-      color: "bg-purple-50",
-      iconColor: "text-purple-600"
-    },
-    {
-      title: "Pesan & Feedback",
-      description: "Kelola pesan dan feedback pengguna",
-      icon: MessageSquare,
-      href: "/Admin/Messages",
-      color: "bg-pink-50",
-      iconColor: "text-pink-600"
-    },
-    {
-      title: "Dokumentasi",
-      description: "Kelola dokumentasi dan panduan",
-      icon: FileText,
-      href: "/Admin/Documentation",
-      color: "bg-amber-50",
-      iconColor: "text-amber-600"
-    },
-    {
-      title: "Keamanan",
-      description: "Pengaturan keamanan dan privasi",
-      icon: Shield,
-      href: "/Admin/Security",
-      color: "bg-red-50",
-      iconColor: "text-red-600"
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-[#F6F6EC]">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <Link href="/" className="inline-flex items-center text-amber-800 hover:text-amber-700">
-              <ChevronLeft size={20} />
-              <span>Kembali ke Halaman Utama</span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-600 hover:text-amber-800 relative">
-                <Bell size={20} />
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              <button className="p-2 text-gray-600 hover:text-amber-800">
-                <Settings size={20} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#F6F6EC] flex">
+      {/* Sidebar Component */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Panel Admin</h1>
-          <p className="mt-2 text-gray-600">Kelola dan pantau aktivitas sistem</p>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Pengguna</p>
-                <p className="text-2xl font-semibold text-gray-900">1,234</p>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Users className="text-blue-600" size={24} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Rumah</p>
-                <p className="text-2xl font-semibold text-gray-900">567</p>
-              </div>
-              <div className="p-3 bg-green-50 rounded-lg">
-                <Home className="text-green-600" size={24} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Material Dikirim</p>
-                <p className="text-2xl font-semibold text-gray-900">328</p>
-              </div>
-              <div className="p-3 bg-orange-50 rounded-lg">
-                <Truck className="text-orange-600" size={24} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Aktivitas Hari Ini</p>
-                <p className="text-2xl font-semibold text-gray-900">89</p>
-              </div>
-              <div className="p-3 bg-purple-50 rounded-lg">
-                <BarChart2 className="text-purple-600" size={24} />
-              </div>
+      <div className="flex-1 transition-all duration-300 lg:ml-64">
+        {/* Header */}
+        <div className="bg-white shadow-sm sticky top-0 z-40">
+          <div className="px-3 sm:px-4 md:px-6">
+            <div className="flex justify-between items-center py-2 sm:py-3 md:py-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-1.5 sm:p-2 text-gray-600 hover:text-gray-900"
+              >
+                <Menu size={20} className="sm:w-6 sm:h-6" />
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {adminFeatures.map((feature, index) => (
-            <Link key={index} href={feature.href}>
-              <div className={`${feature.color} rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer`}>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{feature.title}</h3>
-                    <p className="mt-1 text-sm text-gray-600">{feature.description}</p>
+        {/* Content */}
+        <div className="p-3 sm:p-4 md:p-6">
+          <div className="mb-3 sm:mb-4 md:mb-6">
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base text-gray-600">Selamat datang di panel admin</p>
+          </div>
+
+          {/* Quick Links */}
+          <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">Akses Cepat</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+              <Link href="/Admin/Users" className="block p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-center">
+                  <Users size={18} className="mr-2 text-blue-600 sm:w-5 sm:h-5" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">Manajemen Pengguna</span>
+                </div>
+              </Link>
+              <Link href="/Admin/Houses" className="block p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center">
+                    <Home size={18} className="mr-2 text-green-600 sm:w-5 sm:h-5" />
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">Manajemen Rumah</span>
                   </div>
-                  <div className={`p-3 rounded-lg ${feature.color}`}>
-                    <feature.icon className={feature.iconColor} size={24} />
+              </Link>
+               <Link href="/Admin/support" className="block p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center">
+                    <HelpCircle size={18} className="mr-2 text-purple-600 sm:w-5 sm:h-5" />
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">Dukungan Pengguna</span>
                   </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+            {/* User Stats Card */}
+            <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 sm:text-sm">Total Pengguna</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl md:text-3xl">{userStats.total}</p>
+                </div>
+                <div className="p-1.5 sm:p-2 md:p-3 bg-blue-50 rounded-lg">
+                  <Users className="text-blue-600 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
                 </div>
               </div>
-            </Link>
-          ))}
+              <div className="mt-2 border-t pt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3 sm:pt-3 md:gap-4 md:pt-4">
+                <div>
+                  <p className="text-xs text-gray-500">Pelanggan</p>
+                  <p className="text-sm font-semibold text-gray-900">{userStats.customers}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Admin</p>
+                  <p className="text-sm font-semibold text-gray-900">{userStats.admins}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* House Stats Card */}
+            <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 sm:text-sm">Total Rumah</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl md:text-3xl">{houseStats.total}</p>
+                </div>
+                <div className="p-1.5 sm:p-2 md:p-3 bg-green-50 rounded-lg">
+                  <Home className="text-green-600 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                </div>
+              </div>
+              <div className="mt-2 border-t pt-2 grid grid-cols-3 gap-1 sm:mt-3 sm:gap-2 sm:pt-3 md:gap-3 md:pt-4">
+                <div>
+                  <p className="text-xs text-gray-500">Minimalis</p>
+                  <p className="text-sm font-semibold text-gray-900">{houseStats.minimalis}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Modern</p>
+                  <p className="text-sm font-semibold text-gray-900">{houseStats.modern}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Tradisional</p>
+                  <p className="text-sm font-semibold text-gray-900">{houseStats.tradisional}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Material Stats Card */}
+            <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div>
+                  <p className="text-xs font-medium text-gray-500 sm:text-sm">Total Material</p>
+                  <p className="text-xl font-bold text-gray-900 sm:text-2xl md:text-3xl">{materialStats.total}</p>
+                </div>
+                <div className="p-1.5 sm:p-2 md:p-3 bg-orange-50 rounded-lg">
+                  <Package className="text-orange-600 w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+                </div>
+              </div>
+              <div className="mt-2 border-t pt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3 sm:pt-3 md:gap-4 md:pt-4">
+                <div>
+                  <p className="text-xs text-gray-500">Menunggu</p>
+                  <p className="text-sm font-semibold text-gray-900">{materialStats.pending}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Diproses</p>
+                  <p className="text-sm font-semibold text-gray-900">{materialStats.processing}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Dikirim</p>
+                  <p className="text-sm font-semibold text-gray-900">{materialStats.shipped}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Terkirim</p>
+                  <p className="text-sm font-semibold text-gray-900">{materialStats.delivered}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Chart */}
+          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm mb-3 sm:mb-4 md:mb-6">
+             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">Distribusi Tipe Rumah</h2>
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[280px]">
+                <Bar data={chartData} options={chartOptions} />
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activities (Placeholder)*/}
+          <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-6 shadow-sm">
+             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">Aktivitas Terbaru</h2>
+             <div className="text-center py-4 text-gray-500 text-sm sm:text-base">
+                Fitur aktivitas terbaru akan segera hadir.
+             </div>
+          </div>
         </div>
       </div>
     </div>

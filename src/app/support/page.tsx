@@ -1,235 +1,267 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../hooks/useAuth';
-import { getUserSupportThreads, createSupportThread } from '../../services/supportService';
-import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { createSupportThread, SupportThread } from '@/services/supportService';
+import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { db } from '@/firebase';
+import Navbar from '@/components/Navbar';
+import { 
+  MessageSquare,
+  AlertCircle,
+  Loader2,
+  ChevronLeft,
+  Send,
+  Clock,
+  Plus
+} from 'lucide-react';
 
 export default function SupportPage() {
-  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [threads, setThreads] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  
-  // Form state for new support thread
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [showNewThreadForm, setShowNewThreadForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [threads, setThreads] = useState<SupportThread[]>([]);
+  const [loadingThreads, setLoadingThreads] = useState(true);
+  const purchaseId = searchParams.get('purchaseId');
 
   useEffect(() => {
-    const loadSupportThreads = async () => {
-      if (!user || authLoading) return;
-      
-      try {
-        setIsLoading(true);
-        const { success, threads: userThreads, error } = await getUserSupportThreads(user.uid);
-        
-        if (success) {
-          setThreads(userThreads);
-        } else {
-          setError(error || 'Failed to load support threads');
-        }
-      } catch (err) {
-        console.error('Error loading support threads:', err);
-        setError('An unexpected error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadSupportThreads();
-  }, [user, authLoading]);
+    if (!user) {
+      router.push('/Login');
+      return;
+    }
 
-  const handleCreateThread = async (e) => {
-    e.preventDefault();
+    // Load user's support threads
+    const threadsRef = collection(db, 'supportThreads');
+    const q = query(
+      threadsRef,
+      where('userId', '==', user.uid),
+      orderBy('updatedAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newThreads: SupportThread[] = [];
+      snapshot.forEach((doc) => {
+        newThreads.push({
+          id: doc.id,
+          ...doc.data()
+        } as SupportThread);
+      });
+      setThreads(newThreads);
+      setLoadingThreads(false);
+    });
     
-    if (!subject.trim() || !message.trim() || !user) return;
+    return () => unsubscribe();
+  }, [user, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    
+    setLoading(true);
+    setError(null);
     
     try {
-      setIsCreating(true);
-      const userName = user.displayName || user.email?.split('@')[0] || 'User';
-      
-      const { success, threadId, error } = await createSupportThread(
+      const { error } = await createSupportThread(
         user.uid,
-        userName,
+        user.displayName || 'User',
         user.email || '',
         subject,
-        message
+        message,
+        purchaseId || undefined
       );
       
-      if (success && threadId) {
-        router.push(`/support/${threadId}`);
-      } else {
+      if (error) {
         setError(error || 'Failed to create support thread');
-        setIsCreating(false);
+      } else {
+        setSubject('');
+        setMessage('');
+        setShowForm(false);
       }
     } catch (err) {
       console.error('Error creating support thread:', err);
       setError('An unexpected error occurred');
-      setIsCreating(false);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="container mx-auto p-4 flex justify-center items-center h-[50vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your support threads...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (!user) {
-    return (
-      <div className="container mx-auto p-4">
-        <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 p-6 rounded-lg">
-          <h2 className="text-xl font-bold mb-3">Login Required</h2>
-          <p>You need to be logged in to view your support threads.</p>
-          <button 
-            onClick={() => router.push('/login')}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
-          >
-            Log In
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-primary to-primary-dark p-4 text-white">
+    <div className="min-h-screen bg-[#F6F6EC]">
+      <Navbar />
+      <div className="pt-24 pb-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center text-[#594C1A] hover:text-[#938656] mb-4"
+            >
+              <ChevronLeft size={20} className="mr-2" />
+              <span>Kembali</span>
+            </button>
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Support Threads</h1>
-            {!showNewThreadForm && (
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Support Center</h1>
+                <p className="mt-2 text-gray-600">
+                  Tim support kami siap membantu Anda dengan pertanyaan seputar material dan konstruksi
+                </p>
+              </div>
               <button
-                onClick={() => setShowNewThreadForm(true)}
-                className="bg-white text-primary px-4 py-2 rounded hover:bg-gray-100"
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-[#594C1A] hover:bg-[#938656]"
               >
-                New Support Request
+                <Plus className="w-4 h-4 mr-2" />
+                Buat Permintaan Baru
               </button>
-            )}
           </div>
         </div>
         
+          {showForm ? (
+            <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
         {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
-            <p>{error}</p>
+                <div className="mb-6 p-4 bg-red-50 rounded-lg flex items-start">
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3" />
+                  <p className="text-red-700">{error}</p>
           </div>
         )}
         
-        {showNewThreadForm && (
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold mb-3">Create New Support Request</h2>
-            <form onSubmit={handleCreateThread}>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="subject">
-                  Subject
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                    Subjek
                 </label>
                 <input
                   type="text"
                   id="subject"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="What is your issue about?"
+                    placeholder="Masukkan subjek permintaan bantuan"
+                    className="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
                   required
                 />
               </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="message">
-                  Message
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    Pesan
                 </label>
                 <textarea
                   id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32"
-                  placeholder="Describe your issue in detail..."
+                    placeholder="Jelaskan detail permintaan bantuan Anda"
+                    rows={6}
+                    className="block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
                   required
-                ></textarea>
+                  />
               </div>
-              <div className="flex gap-2">
+
+                <div className="flex gap-4">
                 <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark disabled:opacity-50"
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
-                  {isCreating ? 'Creating...' : 'Create Support Thread'}
+                    Batal
                 </button>
                 <button
-                  type="button"
-                  onClick={() => setShowNewThreadForm(false)}
-                  className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-[#594C1A] hover:bg-[#938656] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Cancel
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Mengirim...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Kirim Permintaan
+                      </>
+                    )}
                 </button>
               </div>
             </form>
           </div>
-        )}
+          ) : null}
         
-        <div className="divide-y">
-          {threads.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">
-              <p className="mb-4">You don't have any support threads yet.</p>
-              {!showNewThreadForm && (
-                <button
-                  onClick={() => setShowNewThreadForm(true)}
-                  className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark inline-block"
+          {/* Support Threads List */}
+          <div className="space-y-4">
+            {loadingThreads ? (
+              <div className="flex items-center justify-center h-40">
+                <Loader2 className="w-8 h-8 text-[#594C1A] animate-spin" />
+              </div>
+            ) : threads.length > 0 ? (
+              threads.map((thread) => (
+                <div
+                  key={thread.id}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                 >
-                  Create Your First Support Request
-                </button>
-              )}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{thread.subject}</h3>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            thread.status === 'open' 
+                              ? 'bg-green-100 text-green-800'
+                              : thread.status === 'in-progress'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {thread.status === 'open' ? 'Open' : 
+                             thread.status === 'in-progress' ? 'In Progress' : 'Closed'}
+                          </span>
+                        </div>
+                        <div className="flex items-center text-sm text-gray-600 mb-4">
+                          <Clock className="w-4 h-4 mr-1" />
+                          <span>
+                            {thread.createdAt.toDate().toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
             </div>
-          ) : (
-            threads.map((thread) => (
-              <Link href={`/support/${thread.id}`} key={thread.id}>
-                <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-lg">{thread.subject}</h3>
-                      <p className="text-gray-600 text-sm mt-1 line-clamp-1">
-                        {thread.lastMessage || 'No messages yet'}
-                      </p>
+                        <p className="text-gray-600 line-clamp-2">{thread.lastMessage}</p>
                     </div>
-                    <div className="flex items-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium 
-                        ${thread.status === 'open' ? 'bg-green-100 text-green-800' : 
-                        thread.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
-                        'bg-gray-100 text-gray-800'}`}
+                      <button
+                        onClick={() => router.push(`/support/${thread.id}`)}
+                        className="px-4 py-2 bg-[#594C1A] text-white rounded-lg hover:bg-[#938656] transition-colors"
                       >
-                        {thread.status === 'open' ? 'Open' : 
-                        thread.status === 'in-progress' ? 'In Progress' : 
-                        'Closed'}
-                      </span>
-                      {thread.unreadMessages && (
-                        <span className="ml-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          !
-                        </span>
-                      )}
+                        Lihat Detail
+                      </button>
                     </div>
-                  </div>
-                  <div className="mt-2 flex justify-between text-xs text-gray-500">
-                    <span>
-                      Created: {thread.createdAt?.toDate().toLocaleDateString()}
-                    </span>
-                    {thread.lastMessageTime && (
-                      <span>
-                        Last update: {thread.lastMessageTime.toDate().toLocaleString()}
-                      </span>
-                    )}
                   </div>
                 </div>
-              </Link>
-            ))
-          )}
+              ))
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Belum Ada Permintaan Bantuan</h3>
+                <p className="text-gray-600 mb-6">
+                  Buat permintaan bantuan baru untuk mendapatkan bantuan dari tim support kami
+                </p>
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-[#594C1A] hover:bg-[#938656]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Buat Permintaan Baru
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -5,8 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { getArchitectConsultations, updateConsultationStatus, Consultation, ConsultationStatus } from '@/services/consultationService';
 import { getUserData, setArchitectAvailability } from '@/services/userService';
 import { useRouter } from 'next/navigation';
-import { FiMessageSquare, FiLoader, FiUser, FiToggleLeft, FiToggleRight, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiMessageSquare, FiLoader, FiUser, FiToggleLeft, FiToggleRight, FiClock, FiCheckCircle, FiXCircle, FiInfo } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
+import { motion } from 'framer-motion';
 
 export default function ArchitectDashboard() {
   const { user, loading: authLoading } = useAuth({ redirectToLogin: true });
@@ -171,135 +172,182 @@ export default function ArchitectDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F6F6EC] font-sans">
       <Navbar />
       
-      <div className="container max-w-6xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="container max-w-6xl mx-auto px-4 py-12">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-10 gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard Arsitek</h1>
-            <p className="text-gray-600">Kelola konsultasi desain pengguna</p>
+            <h1 className="text-4xl font-bold text-[#594C1A] mb-2">Dashboard Arsitek</h1>
+            <p className="text-[#594C1A]/80 text-lg">Kelola konsultasi desain pengguna yang ditugaskan kepada Anda</p>
           </div>
           
-          <button 
+          <motion.button 
             onClick={toggleAvailability}
             disabled={updatingAvailability}
-            className={`flex items-center px-4 py-2 rounded-lg text-white ${
-              isAvailable ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'
-            }`}
+            className={`flex items-center px-6 py-3 rounded-xl text-white text-lg font-medium shadow-md transition-all duration-300 ${
+              isAvailable ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800' : 'bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             {updatingAvailability ? (
-              <FiLoader className="animate-spin mr-2" />
+              <FiLoader className="animate-spin mr-3" size={20} />
             ) : isAvailable ? (
-              <FiToggleRight className="mr-2" />
+              <FiToggleRight className="mr-3" size={20} />
             ) : (
-              <FiToggleLeft className="mr-2" />
+              <FiToggleLeft className="mr-3" size={20} />
             )}
-            {isAvailable ? 'Tersedia' : 'Tidak Tersedia'}
-          </button>
+            {isAvailable ? 'Status: Tersedia' : 'Status: Tidak Tersedia'}
+          </motion.button>
         </div>
         
         {authLoading || loading ? (
-          <div className="flex items-center justify-center h-64">
-            <FiLoader className="animate-spin text-blue-600 w-10 h-10" />
+          <div className="flex items-center justify-center h-96">
+            <FiLoader className="animate-spin text-[#594C1A] w-16 h-16" />
           </div>
         ) : error ? (
-          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
+          <motion.div 
+            className="bg-red-100 border border-red-300 text-red-700 px-6 py-4 rounded-xl shadow-sm text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="font-semibold text-lg mb-2">Error Loading Data</h3>
+            <p>{error}</p>
+          </motion.div>
         ) : consultations.length === 0 ? (
-          <div className="bg-white shadow-md rounded-lg p-8 text-center">
-            <p className="text-gray-600 mb-4">Anda belum memiliki konsultasi aktif</p>
-            <div className="text-center mt-4">
-              <p className="text-gray-500">
-                Pastikan status Anda diatur ke "Tersedia" untuk menerima konsultasi baru
-              </p>
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", duration: 0.7 }}
+            className="bg-white shadow-xl rounded-[2rem] p-12 text-center border border-[#EAE0D0]"
+          >
+            <FiMessageSquare className="mx-auto text-[#594C1A]/30 w-20 h-20 mb-6" />
+            <h3 className="text-2xl font-bold text-[#594C1A] mb-4">Tidak Ada Konsultasi Aktif</h3>
+            <p className="text-[#594C1A]/80 max-w-lg mx-auto mb-6">
+              Anda belum memiliki permintaan konsultasi yang ditugaskan atau aktif saat ini. Pastikan status ketersediaan Anda aktif untuk menerima permintaan baru.
+            </p>
+            <motion.button 
+              onClick={toggleAvailability}
+              disabled={updatingAvailability || isAvailable}
+              className={`inline-flex items-center px-8 py-4 rounded-xl text-white text-lg font-medium shadow-md transition-all duration-300 ${
+                !isAvailable ? 'bg-gradient-to-r from-[#594C1A] to-[#938656] hover:from-[#938656] hover:to-[#594C1A]' : 'bg-gray-400 cursor-not-allowed'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+               {updatingAvailability ? (
+                <FiLoader className="animate-spin mr-3" size={20} />
+              ) : (
+                <FiToggleRight className="mr-3" size={20} />
+              )}
+              Set Status Tersedia
+            </motion.button>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-6">
             {consultations.map(consultation => (
-              <div 
+              <motion.div 
                 key={consultation.id} 
-                className="bg-white shadow-md rounded-lg overflow-hidden"
+                className="bg-white shadow-xl rounded-[2rem] overflow-hidden border border-[#EAE0D0]"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                whileHover={{ y: -5, boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-bold text-gray-900">{consultation.designData.name}</h2>
+                <div className="p-6 sm:p-8">
+                  <div className="flex justify-between items-start mb-4 gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold text-[#594C1A] mb-2">{consultation.designData.name}</h2>
+                      <p className="text-[#594C1A]/80 text-sm">{consultation.designData.description}</p>
+                    </div>
                     {getStatusBadge(consultation.status)}
                   </div>
                   
-                  <p className="text-gray-600 mb-4">
-                    {consultation.designData.description.length > 150 
-                      ? consultation.designData.description.substring(0, 150) + '...' 
-                      : consultation.designData.description}
-                  </p>
-                  
-                  <div className="flex items-center text-gray-500 text-sm mb-4">
-                    <FiUser className="mr-1" />
-                    <span>Pengguna: {consultation.userId}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[#594C1A]/90 text-sm mt-6">
+                     <div className="flex items-center">
+                      <FiInfo className="mr-2 w-4 h-4" />
+                      <span>Gaya: {consultation.designData.style || 'Belum ditentukan'}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <FiUser className="mr-2 w-4 h-4" />
+                      <span>Pengguna ID: {consultation.userId}</span>
+                    </div>
+                     <div className="flex items-center">
+                      <FiClock className="mr-2 w-4 h-4" />
+                      <span>Dibuat pada: {formatDate(consultation.createdAt)}</span>
+                    </div>
+                     <div className="flex items-center">
+                      <span className="font-semibold">Estimasi Harga:</span>
+                       <span className="ml-2">{new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR'
+                      }).format(Number(consultation.designData.estimatedPrice) || 0)}</span>
+                    </div>
                   </div>
                   
-                  <p className="text-gray-500 text-sm mb-4">
-                    Dibuat pada: {formatDate(consultation.createdAt)}
-                  </p>
-                  
-                  <div className="flex items-center justify-between mt-4 flex-wrap gap-2">
-                    <button
-                      onClick={() => router.push(`/Profile/consultations/${consultation.id}`)}
-                      className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                    >
-                      <FiMessageSquare className="mr-1" />
-                      {consultation.status === 'active' ? 'Lanjutkan Chat' : 'Lihat Detail'}
-                    </button>
-                    
-                    {consultation.status === 'active' && (
-                      <button
-                        onClick={() => updateStatus(consultation.id!, 'completed')}
-                        disabled={updatingStatus === consultation.id}
-                        className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
-                      >
-                        {updatingStatus === consultation.id ? (
-                          <FiLoader className="animate-spin mr-1" />
-                        ) : (
-                          <FiCheckCircle className="mr-1" />
-                        )}
-                        Tandai Selesai
-                      </button>
-                    )}
-                    
-                    {consultation.status === 'pending' && (
-                      <button
+                  <div className="flex items-center justify-end mt-8 flex-wrap gap-3">
+                     {consultation.status === 'pending' && (
+                      <motion.button
                         onClick={() => updateStatus(consultation.id!, 'active')}
                         disabled={updatingStatus === consultation.id}
-                        className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                        className="flex items-center px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-xl text-lg font-medium shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         {updatingStatus === consultation.id ? (
-                          <FiLoader className="animate-spin mr-1" />
+                          <FiLoader className="animate-spin mr-3" size={20} />
                         ) : (
-                          <FiCheckCircle className="mr-1" />
+                          <FiCheckCircle className="mr-3" size={20} />
                         )}
-                        Terima Konsultasi
-                      </button>
+                        Konfirmasi Mulai Konsultasi
+                      </motion.button>
                     )}
-                    
-                    {(consultation.status === 'pending' || consultation.status === 'active') && (
-                      <button
+
+                     {consultation.status === 'active' && (
+                       <motion.button
+                        onClick={() => router.push(`/Profile/consultations/${consultation.id}`)}
+                         className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl text-lg font-medium shadow-md transition-all duration-300"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                         <FiMessageSquare className="mr-3" size={20} />
+                        Lihat Percakapan
+                      </motion.button>
+                    )}
+
+                    {(consultation.status === 'active' || consultation.status === 'pending') && (
+                      <motion.button
                         onClick={() => updateStatus(consultation.id!, 'cancelled')}
                         disabled={updatingStatus === consultation.id}
-                        className="flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                        className="flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl text-lg font-medium shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         {updatingStatus === consultation.id ? (
-                          <FiLoader className="animate-spin mr-1" />
+                          <FiLoader className="animate-spin mr-3" size={20} />
                         ) : (
-                          <FiXCircle className="mr-1" />
+                          <FiXCircle className="mr-3" size={20} />
                         )}
-                        Batalkan
-                      </button>
+                        Batalkan Konsultasi
+                      </motion.button>
                     )}
+
+                     {consultation.status === 'completed' && (
+                       <motion.button
+                        onClick={() => router.push(`/Profile/consultations/${consultation.id}`)}
+                         className="flex items-center px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-xl text-lg font-medium shadow-md transition-all duration-300"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                         <FiInfo className="mr-3" size={20} />
+                        Lihat Detail (Selesai)
+                      </motion.button>
+                    )}
+
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}

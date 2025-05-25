@@ -44,86 +44,50 @@ export const updateHouse = async (
       material: houseData.material || '',
       tipe: houseData.tipe || '',
       description: houseData.description || '',
-      // Initialize arrays with empty arrays if not provided
-      materials: [],
-      rooms: [],
-      blueprints: [],
-      features: [],
-      constructionStages: [],
-      // Initialize nested objects with default values
+      // Process arrays with proper type checking and conversion
+      materials: Array.isArray(houseData.materials) ? houseData.materials.map(m => ({
+        name: String(m.name || ''),
+        quantity: Number(m.quantity) || 0,
+        unit: String(m.unit || ''),
+        price: Number(m.price) || 0,
+        imageUrl: m.imageUrl || ''
+      })) : [],
+      rooms: Array.isArray(houseData.rooms) ? houseData.rooms.map(r => ({
+        name: String(r.name || ''),
+        area: Number(r.area) || 0,
+        description: String(r.description || ''),
+        imageUrl: r.imageUrl || ''
+      })) : [],
+      blueprints: Array.isArray(houseData.blueprints) ? houseData.blueprints.map(b => ({
+        url: String(b.url || ''),
+        description: String(b.description || ''),
+        type: b.type || 'floor',
+        imageUrl: b.imageUrl || '',
+        name: b.name || ''
+      })) : [],
+      features: Array.isArray(houseData.features) ? houseData.features.map(f => String(f || '')) : [],
+      constructionStages: Array.isArray(houseData.constructionStages) ? houseData.constructionStages.map(s => ({
+        name: String(s.name || ''),
+        duration: Number(s.duration) || 0,
+        description: String(s.description || ''),
+        imageUrl: s.imageUrl || '',
+        status: s.status || 'pending'
+      })) : [],
       specifications: {
-        floorCount: 0,
-        bedroomCount: 0,
-        bathroomCount: 0,
-        carportCount: 0,
-        buildingArea: 0,
-        landArea: 0
+        floorCount: Number(houseData.specifications?.floorCount) || 0,
+        bedroomCount: Number(houseData.specifications?.bedroomCount) || 0,
+        bathroomCount: Number(houseData.specifications?.bathroomCount) || 0,
+        carportCount: Number(houseData.specifications?.carportCount) || 0,
+        buildingArea: Number(houseData.specifications?.buildingArea) || 0,
+        landArea: Number(houseData.specifications?.landArea) || 0
       },
       estimatedCost: {
-        materialCost: 0,
-        laborCost: 0,
-        otherCost: 0,
-        totalCost: 0
+        materialCost: Number(houseData.estimatedCost?.materialCost) || 0,
+        laborCost: Number(houseData.estimatedCost?.laborCost) || 0,
+        otherCost: Number(houseData.estimatedCost?.otherCost) || 0,
+        totalCost: Number(houseData.estimatedCost?.totalCost) || 0
       }
     };
-
-    // Handle arrays with proper type checking and conversion
-    if (Array.isArray(houseData.materials)) {
-      updateData.materials = houseData.materials.map(material => ({
-        name: String(material.name || ''),
-        quantity: Number(material.quantity) || 0,
-        unit: String(material.unit || ''),
-        price: Number(material.price) || 0
-      }));
-    }
-
-    if (Array.isArray(houseData.rooms)) {
-      updateData.rooms = houseData.rooms.map(room => ({
-        name: String(room.name || ''),
-        area: Number(room.area) || 0,
-        description: String(room.description || '')
-      }));
-    }
-
-    if (Array.isArray(houseData.blueprints)) {
-      updateData.blueprints = houseData.blueprints.map(blueprint => ({
-        url: String(blueprint.url || ''),
-        description: String(blueprint.description || '')
-      }));
-    }
-
-    if (Array.isArray(houseData.features)) {
-      updateData.features = houseData.features.map(feature => String(feature || ''));
-    }
-
-    if (Array.isArray(houseData.constructionStages)) {
-      updateData.constructionStages = houseData.constructionStages.map(stage => ({
-        name: String(stage.name || ''),
-        duration: Number(stage.duration) || 0,
-        description: String(stage.description || '')
-      }));
-    }
-
-    // Handle nested objects with proper type checking and conversion
-    if (houseData.specifications) {
-      updateData.specifications = {
-        floorCount: Number(houseData.specifications.floorCount) || 0,
-        bedroomCount: Number(houseData.specifications.bedroomCount) || 0,
-        bathroomCount: Number(houseData.specifications.bathroomCount) || 0,
-        carportCount: Number(houseData.specifications.carportCount) || 0,
-        buildingArea: Number(houseData.specifications.buildingArea) || 0,
-        landArea: Number(houseData.specifications.landArea) || 0
-      };
-    }
-
-    if (houseData.estimatedCost) {
-      updateData.estimatedCost = {
-        materialCost: Number(houseData.estimatedCost.materialCost) || 0,
-        laborCost: Number(houseData.estimatedCost.laborCost) || 0,
-        otherCost: Number(houseData.estimatedCost.otherCost) || 0,
-        totalCost: Number(houseData.estimatedCost.totalCost) || 0
-      };
-    }
 
     // If there's a new image, update the imageUrl
     if (newImageBase64) {
@@ -154,15 +118,15 @@ export const validateHouseData = (houseData: Partial<HouseFormData>): {
     errors.name = 'Nama rumah wajib diisi';
   }
 
-  if (houseData.durasi !== undefined && houseData.durasi <= 0) {
+  if (houseData.durasi !== undefined && Number(houseData.durasi) <= 0) {
     errors.durasi = 'Durasi harus lebih dari 0';
   }
 
-  if (houseData.harga !== undefined && houseData.harga <= 0) {
+  if (houseData.harga !== undefined && Number(houseData.harga) <= 0) {
     errors.harga = 'Harga harus lebih dari 0';
   }
 
-  if (houseData.luas !== undefined && houseData.luas <= 0) {
+  if (houseData.luas !== undefined && Number(houseData.luas) <= 0) {
     errors.luas = 'Luas harus lebih dari 0';
   }
 
@@ -174,37 +138,79 @@ export const validateHouseData = (houseData: Partial<HouseFormData>): {
     errors.tipe = 'Tipe rumah wajib diisi';
   }
 
+  // Validate materials
+  if (Array.isArray(houseData.materials)) {
+    houseData.materials.forEach((material, index) => {
+      if (!material.name?.trim()) {
+        errors[`materials.${index}.name`] = 'Nama material wajib diisi';
+      }
+      if (Number(material.quantity) <= 0) {
+        errors[`materials.${index}.quantity`] = 'Jumlah material harus lebih dari 0';
+      }
+      if (!material.unit?.trim()) {
+        errors[`materials.${index}.unit`] = 'Satuan material wajib diisi';
+      }
+      if (Number(material.price) < 0) {
+        errors[`materials.${index}.price`] = 'Harga material tidak boleh negatif';
+      }
+    });
+  }
+
+  // Validate blueprints
+  if (Array.isArray(houseData.blueprints)) {
+    houseData.blueprints.forEach((blueprint, index) => {
+      if (!blueprint.url?.trim()) {
+        errors[`blueprints.${index}.url`] = 'URL blueprint wajib diisi';
+      }
+      if (!blueprint.type) {
+        errors[`blueprints.${index}.type`] = 'Tipe blueprint wajib diisi';
+      }
+    });
+  }
+
+  // Validate construction stages
+  if (Array.isArray(houseData.constructionStages)) {
+    houseData.constructionStages.forEach((stage, index) => {
+      if (!stage.name?.trim()) {
+        errors[`constructionStages.${index}.name`] = 'Nama tahap wajib diisi';
+      }
+      if (Number(stage.duration) <= 0) {
+        errors[`constructionStages.${index}.duration`] = 'Durasi tahap harus lebih dari 0';
+      }
+    });
+  }
+
   // Validate specifications
   if (houseData.specifications) {
-    if (houseData.specifications.floorCount <= 0) {
+    if (Number(houseData.specifications.floorCount) <= 0) {
       errors['specifications.floorCount'] = 'Jumlah lantai harus lebih dari 0';
     }
-    if (houseData.specifications.bedroomCount <= 0) {
+    if (Number(houseData.specifications.bedroomCount) <= 0) {
       errors['specifications.bedroomCount'] = 'Jumlah kamar tidur harus lebih dari 0';
     }
-    if (houseData.specifications.bathroomCount <= 0) {
+    if (Number(houseData.specifications.bathroomCount) <= 0) {
       errors['specifications.bathroomCount'] = 'Jumlah kamar mandi harus lebih dari 0';
     }
-    if (houseData.specifications.buildingArea <= 0) {
+    if (Number(houseData.specifications.buildingArea) <= 0) {
       errors['specifications.buildingArea'] = 'Luas bangunan harus lebih dari 0';
     }
-    if (houseData.specifications.landArea <= 0) {
+    if (Number(houseData.specifications.landArea) <= 0) {
       errors['specifications.landArea'] = 'Luas tanah harus lebih dari 0';
     }
   }
 
   // Validate estimated costs
   if (houseData.estimatedCost) {
-    if (houseData.estimatedCost.materialCost < 0) {
+    if (Number(houseData.estimatedCost.materialCost) < 0) {
       errors['estimatedCost.materialCost'] = 'Biaya material tidak boleh negatif';
     }
-    if (houseData.estimatedCost.laborCost < 0) {
+    if (Number(houseData.estimatedCost.laborCost) < 0) {
       errors['estimatedCost.laborCost'] = 'Biaya tenaga kerja tidak boleh negatif';
     }
-    if (houseData.estimatedCost.otherCost < 0) {
+    if (Number(houseData.estimatedCost.otherCost) < 0) {
       errors['estimatedCost.otherCost'] = 'Biaya lainnya tidak boleh negatif';
     }
-    if (houseData.estimatedCost.totalCost < 0) {
+    if (Number(houseData.estimatedCost.totalCost) < 0) {
       errors['estimatedCost.totalCost'] = 'Total biaya tidak boleh negatif';
     }
   }

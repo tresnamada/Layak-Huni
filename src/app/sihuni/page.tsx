@@ -344,37 +344,28 @@ export default function AiPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#F6F6EC] to-[#F0F4E8]">
       <Navbar />
-      <div className="flex-1 flex flex-col w-full">
+      <div className="flex-1 flex flex-col w-full pt-10">
         {/* Welcome Section */}
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center flex-1 px-4 py-16">
             {/* AI Avatar with Animation */}
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={{ scale: 2, opacity: 1 }}
               transition={{ duration: 0.5 }}
               className="flex items-center justify-center mb-16"
             >
               <div className="relative">
-                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-amber-100 via-amber-200 to-amber-300 flex items-center justify-center shadow-2xl animate-pulse-slow">
-                  <FiHome className="w-20 h-20 text-amber-600" />
-                </div>
-                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex space-x-3">
-                  <motion.div 
-                    className="w-10 h-10 rounded-full bg-amber-200 border-2 border-white"
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <motion.div 
-                    className="w-10 h-10 rounded-full bg-amber-300 border-2 border-white"
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: 0.2 }}
-                  />
-                  <motion.div 
-                    className="w-10 h-10 rounded-full bg-amber-400 border-2 border-white"
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, delay: 0.4 }}
-                  />
+                <div className="w-100 h-100 flex items-center justify-center animate-pulse-slow overflow-hidden">
+                  <video
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="object-contain w-32 h-32"
+                  >
+                    <source src="/animation.mp4" type="video/mp4" />
+                  </video>
                 </div>
               </div>
             </motion.div>

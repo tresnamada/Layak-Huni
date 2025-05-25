@@ -3,43 +3,200 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, Save, AlertTriangle, Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, Save, AlertTriangle, Plus, Upload, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ImageUploader from '@/components/Admin/ImageUploader';
-import BlueprintUploader from '@/components/Admin/BlueprintUploader';
-import { HouseFormData, Material, Room } from '@/services/houseService';
+import { HouseFormData, Blueprint, Material, Room, ConstructionStage } from '@/services/houseService';
 import { getHouseForEdit, updateHouse, validateHouseData } from '@/services/houseEditService';
 import { useAdmin } from '@/hooks/useAdmin';
+import { compressImage } from '@/utils/imageCompression';
 
 interface FormError {
   [key: string]: string;
 }
 
+interface BlueprintUploaderProps {
+  onBlueprintChange: (blueprint: Blueprint) => void;
+}
+
+const BlueprintUploader: React.FC<BlueprintUploaderProps> = ({ onBlueprintChange }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUrlInput, setIsUrlInput] = useState(false);
+  const [url, setUrl] = useState('');
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [blueprintName, setBlueprintName] = useState('');
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      await handleImageUpload(file);
+    }
+  };
+
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      await handleImageUpload(file);
+    }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    try {
+      setIsCompressing(true);
+      const compressedImage = await compressImage(file, 100); // Compress to under 100KB
+      const base64String = compressedImage;
+      setPreviewUrl(base64String);
+      onBlueprintChange({
+        url: base64String,
+        description: file.name,
+        type: 'floor',
+        imageUrl: base64String,
+        name: blueprintName || file.name
+      });
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      // Fallback to original image if compression fails
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setPreviewUrl(base64String);
+        onBlueprintChange({
+          url: base64String,
+          description: file.name,
+          type: 'floor',
+          imageUrl: base64String,
+          name: blueprintName || file.name
+        });
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsCompressing(false);
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (url) {
+      setPreviewUrl(url);
+      onBlueprintChange({
+        url: url,
+        description: 'Blueprint URL',
+        type: 'floor',
+        imageUrl: url,
+        name: blueprintName || 'Blueprint from URL'
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <input
+        type="text"
+        value={blueprintName}
+        onChange={(e) => setBlueprintName(e.target.value)}
+        placeholder="Enter blueprint name (e.g., Ground Floor Plan)"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
+      />
+      {!isUrlInput ? (
+        <div
+          className={`border-2 border-dashed rounded-lg p-6 text-center ${
+            isDragging ? 'border-amber-500 bg-amber-50' : 'border-gray-300'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileInput}
+            className="hidden"
+            id="blueprint-upload"
+          />
+          <label
+            htmlFor="blueprint-upload"
+            className="cursor-pointer block"
+          >
+            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-600">
+              {isCompressing ? 'Compressing image...' : 'Drag and drop a blueprint image, or click to select'}
+            </p>
+          </label>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Enter blueprint URL"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <button
+            onClick={handleUrlSubmit}
+            className="w-full px-4 py-2 bg-amber-800 text-white rounded-lg hover:bg-amber-700"
+          >
+            Add URL
+          </button>
+        </div>
+      )}
+      <button
+        onClick={() => setIsUrlInput(!isUrlInput)}
+        className="text-sm text-amber-800 hover:text-amber-700"
+      >
+        {isUrlInput ? 'Upload file instead' : 'Enter URL instead'}
+      </button>
+      {previewUrl && (
+        <div className="mt-4">
+          <img
+            src={previewUrl}
+            alt="Blueprint preview"
+            className="max-w-full h-auto rounded-lg"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function EditHousePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const { isAdminUser, loading: checkingAdmin } = useAdmin();
-  const resolvedParams = use(params);
   const [formData, setFormData] = useState<HouseFormData>({
     name: '',
-    durasi: 30,
-    harga: 0,
-    luas: 0,
+    harga: '',
+    luas: '',
+    tipe: '',
     material: '',
-    tipe: 'modern',
+    durasi: '',
     description: '',
-    materials: [],
-    rooms: [],
-    blueprints: [],
+    materials: [] as Material[],
+    rooms: [] as Room[],
+    blueprints: [] as Blueprint[],
+    features: [] as string[],
+    constructionStages: [] as ConstructionStage[],
     specifications: {
-      floorCount: 1,
-      bedroomCount: 2,
-      bathroomCount: 1,
-      carportCount: 1,
+      floorCount: 0,
+      bedroomCount: 0,
+      bathroomCount: 0,
+      carportCount: 0,
       buildingArea: 0,
       landArea: 0
     },
-    features: [],
-    constructionStages: [],
     estimatedCost: {
       materialCost: 0,
       laborCost: 0,
@@ -51,50 +208,55 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
   const [errors, setErrors] = useState<FormError>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [newMaterial, setNewMaterial] = useState<Material>({ name: '', quantity: 0, unit: '', price: 0 });
-  const [newRoom, setNewRoom] = useState<Room>({ name: '', area: 0, description: '' });
+  const [newMaterial, setNewMaterial] = useState<{
+    name: string;
+    quantity: string | number;
+    unit: string;
+    price: string | number;
+  }>({ name: '', quantity: '', unit: '', price: '' });
+  const [newRoom, setNewRoom] = useState<{
+    name: string;
+    area: string | number;
+    description: string;
+  }>({ name: '', area: '', description: '' });
   const [newFeature, setNewFeature] = useState('');
-  const [newStage, setNewStage] = useState({ name: '', duration: 0, description: '' });
+  const [newStage, setNewStage] = useState<{
+    name: string;
+    duration: string | number;
+    description: string;
+  }>({ name: '', duration: '', description: '' });
 
   // Load house data
   useEffect(() => {
-    const loadHouseData = async () => {
+    const loadHouse = async () => {
       try {
-        const houseData = await getHouseForEdit(resolvedParams.id);
-        if (houseData) {
-          // Ensure all required properties exist with default values
-          const updatedHouseData = {
-            ...houseData,
-            materials: houseData.materials || [],
-            rooms: houseData.rooms || [],
-            blueprints: houseData.blueprints || [],
-            features: houseData.features || [],
-            constructionStages: houseData.constructionStages || [],
-            specifications: houseData.specifications || {
-              floorCount: 1,
-              bedroomCount: 2,
-              bathroomCount: 1,
-              carportCount: 1,
-              buildingArea: 0,
-              landArea: 0
-            },
-            estimatedCost: houseData.estimatedCost || {
-              materialCost: 0,
-              laborCost: 0,
-              otherCost: 0,
-              totalCost: 0
-            }
-          };
-          setFormData(updatedHouseData);
-          setImage(houseData.imageUrl);
+        const house = await getHouseForEdit(resolvedParams.id);
+        if (house) {
+          setFormData({
+            name: house.name,
+            harga: house.harga,
+            luas: house.luas,
+            tipe: house.tipe,
+            material: house.material,
+            durasi: house.durasi,
+            description: house.description,
+            materials: house.materials || [],
+            rooms: house.rooms || [],
+            blueprints: house.blueprints || [],
+            features: house.features || [],
+            constructionStages: house.constructionStages || [],
+            specifications: house.specifications,
+            estimatedCost: house.estimatedCost
+          });
+          setImage(house.imageUrl);
         }
       } catch (error) {
-        console.error('Error loading house data:', error);
-        setSubmitError('Gagal memuat data rumah');
+        console.error('Error loading house:', error);
+        setSubmitError('Failed to load house data');
       }
     };
 
-    loadHouseData();
+    loadHouse();
   }, [resolvedParams.id]);
 
   // Redirect non-admin users
@@ -108,36 +270,27 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
     
     if (name.startsWith('specifications.')) {
       const specField = name.split('.')[1];
-      const numValue = value === '' ? 0 : Number(value);
-      if (!isNaN(numValue)) {
-        setFormData(prev => ({
-          ...prev,
-          specifications: {
-            ...prev.specifications,
-            [specField]: numValue
-          }
-        }));
-      }
+      setFormData(prev => ({
+        ...prev,
+        specifications: {
+          ...prev.specifications,
+          [specField]: value === '' ? '' : Number(value)
+        }
+      }));
     } else if (name.startsWith('estimatedCost.')) {
       const costField = name.split('.')[1];
-      const numValue = value === '' ? 0 : Number(value);
-      if (!isNaN(numValue)) {
-        setFormData(prev => ({
-          ...prev,
-          estimatedCost: {
-            ...prev.estimatedCost,
-            [costField]: numValue
-          }
-        }));
-      }
+      setFormData(prev => ({
+        ...prev,
+        estimatedCost: {
+          ...prev.estimatedCost,
+          [costField]: value === '' ? '' : Number(value)
+        }
+      }));
     } else if (name === 'durasi' || name === 'harga' || name === 'luas') {
-      const numValue = value === '' ? 0 : Number(value);
-      if (!isNaN(numValue)) {
-        setFormData(prev => ({
-          ...prev,
-          [name]: numValue
-        }));
-      }
+      setFormData(prev => ({
+        ...prev,
+        [name]: value === '' ? '' : Number(value)
+      }));
     } else {
       setFormData(prev => ({
         ...prev,
@@ -154,17 +307,18 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
   };
 
   const addMaterial = () => {
-    if (newMaterial.name && newMaterial.quantity > 0) {
-      const material = {
-        ...newMaterial,
-        quantity: Number(newMaterial.quantity) || 0,
-        price: Number(newMaterial.price) || 0
-      };
+    const quantity = Number(newMaterial.quantity);
+    const price = Number(newMaterial.price);
+    if (newMaterial.name && !isNaN(quantity) && quantity > 0 && !isNaN(price)) {
       setFormData(prev => ({
         ...prev,
-        materials: [...(prev.materials || []), material]
+        materials: [...prev.materials, {
+          ...newMaterial,
+          quantity: quantity,
+          price: price
+        }]
       }));
-      setNewMaterial({ name: '', quantity: 0, unit: '', price: 0 });
+      setNewMaterial({ name: '', quantity: '', unit: '', price: '' });
     }
   };
 
@@ -176,16 +330,16 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
   };
 
   const addRoom = () => {
-    if (newRoom.name && newRoom.area > 0) {
-      const room = {
-        ...newRoom,
-        area: Number(newRoom.area) || 0
-      };
+    const area = Number(newRoom.area);
+    if (newRoom.name && !isNaN(area) && area > 0) {
       setFormData(prev => ({
         ...prev,
-        rooms: [...(prev.rooms || []), room]
+        rooms: [...prev.rooms, {
+          ...newRoom,
+          area: area
+        }]
       }));
-      setNewRoom({ name: '', area: 0, description: '' });
+      setNewRoom({ name: '', area: '', description: '' });
     }
   };
 
@@ -221,16 +375,17 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
   };
 
   const addConstructionStage = () => {
-    if (newStage.name && newStage.duration > 0) {
-      const stage = {
-        ...newStage,
-        duration: Number(newStage.duration) || 0
-      };
+    const duration = Number(newStage.duration);
+    if (newStage.name && !isNaN(duration) && duration > 0) {
       setFormData(prev => ({
         ...prev,
-        constructionStages: [...(prev.constructionStages || []), stage]
+        constructionStages: [...prev.constructionStages, {
+          ...newStage,
+          duration: duration,
+          status: 'pending'
+        }]
       }));
-      setNewStage({ name: '', duration: 0, description: '' });
+      setNewStage({ name: '', duration: '', description: '' });
     }
   };
 
@@ -243,103 +398,76 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate and format all data before submission
-    const validatedFormData = {
-      ...formData,
-      // Format materials array
-      materials: (formData.materials || []).map(material => ({
-        name: material.name || '',
-        quantity: Number(material.quantity) || 0,
-        unit: material.unit || '',
-        price: Number(material.price) || 0
-      })),
-      // Format rooms array
-      rooms: (formData.rooms || []).map(room => ({
-        name: room.name || '',
-        area: Number(room.area) || 0,
-        description: room.description || ''
-      })),
-      // Format blueprints array
-      blueprints: (formData.blueprints || []).map(blueprint => ({
-        url: blueprint.url || '',
-        description: blueprint.description || ''
-      })),
-      // Format features array
-      features: (formData.features || []).map(feature => feature || ''),
-      // Format construction stages array
-      constructionStages: (formData.constructionStages || []).map(stage => ({
-        name: stage.name || '',
-        duration: Number(stage.duration) || 0,
-        description: stage.description || ''
-      })),
-      // Format specifications object
-      specifications: {
-        floorCount: Number(formData.specifications.floorCount) || 0,
-        bedroomCount: Number(formData.specifications.bedroomCount) || 0,
-        bathroomCount: Number(formData.specifications.bathroomCount) || 0,
-        carportCount: Number(formData.specifications.carportCount) || 0,
-        buildingArea: Number(formData.specifications.buildingArea) || 0,
-        landArea: Number(formData.specifications.landArea) || 0
-      },
-      // Format estimated cost object
-      estimatedCost: {
-        materialCost: Number(formData.estimatedCost.materialCost) || 0,
-        laborCost: Number(formData.estimatedCost.laborCost) || 0,
-        otherCost: Number(formData.estimatedCost.otherCost) || 0,
-        totalCost: Number(formData.estimatedCost.totalCost) || 0
-      }
-    };
-    
-    const { isValid, errors: validationErrors } = validateHouseData(validatedFormData);
-    if (!isValid) {
-      setErrors(validationErrors);
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-      return;
-    }
-    
+    setIsSubmitting(true);
+    setSubmitError(null);
+
     try {
-      setIsSubmitting(true);
-      setSubmitError(null);
-      
-      // Ensure all nested arrays and objects are properly formatted
-      const firebaseData = {
-        ...validatedFormData,
-        materials: validatedFormData.materials || [],
-        rooms: validatedFormData.rooms || [],
-        blueprints: validatedFormData.blueprints || [],
-        features: validatedFormData.features || [],
-        constructionStages: validatedFormData.constructionStages || [],
-        specifications: validatedFormData.specifications || {
-          floorCount: 0,
-          bedroomCount: 0,
-          bathroomCount: 0,
-          carportCount: 0,
-          buildingArea: 0,
-          landArea: 0
+      // Validate form data
+      const validation = validateHouseData(formData);
+      if (!validation.isValid) {
+        setSubmitError(Object.values(validation.errors).join(', '));
+        return;
+      }
+
+      // Format the data for submission
+      const formattedData = {
+        name: formData.name,
+        harga: Number(formData.harga),
+        luas: Number(formData.luas),
+        tipe: formData.tipe,
+        material: formData.material,
+        durasi: Number(formData.durasi),
+        description: formData.description,
+        materials: formData.materials.map(m => ({
+          name: m.name,
+          quantity: Number(m.quantity),
+          unit: m.unit,
+          price: Number(m.price),
+          imageUrl: m.imageUrl
+        })),
+        rooms: formData.rooms.map(r => ({
+          name: r.name,
+          area: Number(r.area),
+          description: r.description,
+          imageUrl: r.imageUrl
+        })),
+        blueprints: formData.blueprints.map(b => ({
+          url: b.url,
+          description: b.description,
+          type: b.type,
+          imageUrl: b.imageUrl,
+          name: b.name
+        })),
+        features: formData.features,
+        constructionStages: formData.constructionStages.map(s => ({
+          name: s.name,
+          duration: Number(s.duration),
+          description: s.description,
+          imageUrl: s.imageUrl,
+          status: s.status
+        })),
+        specifications: {
+          floorCount: Number(formData.specifications.floorCount),
+          bedroomCount: Number(formData.specifications.bedroomCount),
+          bathroomCount: Number(formData.specifications.bathroomCount),
+          carportCount: Number(formData.specifications.carportCount),
+          buildingArea: Number(formData.specifications.buildingArea),
+          landArea: Number(formData.specifications.landArea)
         },
-        estimatedCost: validatedFormData.estimatedCost || {
-          materialCost: 0,
-          laborCost: 0,
-          otherCost: 0,
-          totalCost: 0
+        estimatedCost: {
+          materialCost: Number(formData.estimatedCost.materialCost),
+          laborCost: Number(formData.estimatedCost.laborCost),
+          otherCost: Number(formData.estimatedCost.otherCost),
+          totalCost: Number(formData.estimatedCost.totalCost)
         }
       };
-      
-      await updateHouse(resolvedParams.id, firebaseData, image || undefined);
-      
-      // Redirect to houses list page
+
+      // Update the house
+      await updateHouse(resolvedParams.id, formattedData, image || undefined);
       router.push('/Admin/Houses');
     } catch (error) {
       console.error('Error updating house:', error);
-      setSubmitError(error instanceof Error ? error.message : 'Terjadi kesalahan saat memperbarui rumah');
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
+      setSubmitError('Gagal memperbarui data rumah');
     } finally {
       setIsSubmitting(false);
     }
@@ -355,6 +483,15 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
     { value: 'industrial', label: 'Industrial' },
     { value: 'scandinavian', label: 'Scandinavian' },
   ];
+
+  // Function to handle name change for existing blueprints
+  const handleBlueprintNameChange = (index: number, newName: string) => {
+    setFormData(prev => {
+      const updatedBlueprints = [...prev.blueprints];
+      updatedBlueprints[index] = { ...updatedBlueprints[index], name: newName };
+      return { ...prev, blueprints: updatedBlueprints };
+    });
+  };
 
   if (checkingAdmin) {
     return (
@@ -574,7 +711,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900">Material</h2>
               <div className="space-y-4">
-                {(formData.materials || []).map((material, index) => (
+                {formData.materials.map((material, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div className="flex-1 grid grid-cols-4 gap-2">
                       <input
@@ -627,7 +764,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
                     <input
                       type="number"
                       value={newMaterial.quantity}
-                      onChange={(e) => setNewMaterial({ ...newMaterial, quantity: parseFloat(e.target.value) })}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, quantity: e.target.value })}
                       className="px-4 py-2 border border-gray-300 rounded-lg"
                       placeholder="Jumlah"
                     />
@@ -641,7 +778,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
                     <input
                       type="number"
                       value={newMaterial.price}
-                      onChange={(e) => setNewMaterial({ ...newMaterial, price: parseFloat(e.target.value) })}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, price: e.target.value })}
                       className="px-4 py-2 border border-gray-300 rounded-lg"
                       placeholder="Harga"
                     />
@@ -661,7 +798,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900">Ruangan</h2>
               <div className="space-y-4">
-                {(formData.rooms || []).map((room, index) => (
+                {formData.rooms.map((room, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div className="flex-1 grid grid-cols-3 gap-2">
                       <input
@@ -707,7 +844,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
                     <input
                       type="number"
                       value={newRoom.area}
-                      onChange={(e) => setNewRoom({ ...newRoom, area: parseFloat(e.target.value) })}
+                      onChange={(e) => setNewRoom({ ...newRoom, area: e.target.value })}
                       className="px-4 py-2 border border-gray-300 rounded-lg"
                       placeholder="Luas (m²)"
                     />
@@ -734,13 +871,23 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900">Blueprint</h2>
               <div className="space-y-4">
-                {(formData.blueprints || []).map((blueprint, index) => (
+                {formData.blueprints.map((blueprint, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div className="flex-1">
+                      <input
+                        type="text"
+                        value={blueprint.name || ''}
+                        onChange={(e) => handleBlueprintNameChange(index, e.target.value)}
+                        placeholder="Blueprint Name"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 mb-2"
+                      />
                       <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
+                        <div className="absolute top-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-2 py-1 truncate z-10">
+                          {blueprint.name || 'Untitled Blueprint'}
+                        </div>
                         <img
                           src={blueprint.url}
-                          alt={blueprint.description}
+                          alt={blueprint.description || 'Blueprint'}
                           className="w-full h-full object-contain"
                         />
                       </div>
@@ -772,7 +919,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900">Fitur</h2>
               <div className="space-y-4">
-                {(formData.features || []).map((feature, index) => (
+                {formData.features.map((feature, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <input
                       type="text"
@@ -812,7 +959,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
             <div className="space-y-6">
               <h2 className="text-xl font-semibold text-gray-900">Tahap Konstruksi</h2>
               <div className="space-y-4">
-                {(formData.constructionStages || []).map((stage, index) => (
+                {formData.constructionStages.map((stage, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div className="flex-1 grid grid-cols-3 gap-2">
                       <input
@@ -858,7 +1005,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
                     <input
                       type="number"
                       value={newStage.duration}
-                      onChange={(e) => setNewStage({ ...newStage, duration: parseFloat(e.target.value) })}
+                      onChange={(e) => setNewStage({ ...newStage, duration: e.target.value })}
                       className="px-4 py-2 border border-gray-300 rounded-lg"
                       placeholder="Durasi (hari)"
                     />
