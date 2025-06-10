@@ -226,13 +226,13 @@ export default function SupportPage() {
                         <div className="flex items-center text-sm text-gray-600 mb-4">
                           <Clock className="w-4 h-4 mr-1" />
                           <span>
-                            {thread.createdAt.toDate().toLocaleDateString('id-ID', {
+                            {thread.createdAt?.toDate()?.toLocaleDateString('id-ID', {
                               day: 'numeric',
                               month: 'long',
                               year: 'numeric'
-                            })}
+                            }) || 'Tanggal tidak tersedia'}
                           </span>
-            </div>
+                        </div>
                         <p className="text-gray-600 line-clamp-2">{thread.lastMessage}</p>
                     </div>
                       <button

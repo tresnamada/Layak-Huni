@@ -41,6 +41,12 @@ export async function POST(request: Request) {
       },
       credit_card: {
         secure: true
+      },
+      callbacks: {
+        finish: '/Profile?tab=purchases',
+        error: '/Profile?tab=purchases',
+        pending: '/Profile?tab=purchases',
+        close: '/Profile?tab=purchases'
       }
     };
 

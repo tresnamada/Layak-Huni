@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { updatePurchaseStatus } from '@/services/purchaseService';
+import { db } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +9,11 @@ export async function POST(request: Request) {
     // Verify the transaction status from Midtrans
     const transactionStatus = data.transaction_status;
     const purchaseId = data.custom_field1; // We'll need to pass this from the frontend
+    const orderId = data.order_id;
+
+    if (!purchaseId || !orderId) {
+      throw new Error('Missing purchase ID or order ID');
+    }
 
     // Update purchase status based on transaction status
     let status: 'completed' | 'cancelled' | 'pending';
@@ -25,14 +31,34 @@ export async function POST(request: Request) {
         status = 'pending';
     }
 
-    // Update the purchase status in our database
-    await updatePurchaseStatus(purchaseId, status);
+    // Update the purchase status in Firestore
+    const purchaseRef = doc(db, 'purchases', purchaseId);
+    await updateDoc(purchaseRef, {
+      status,
+      paymentStatus: transactionStatus,
+      updatedAt: new Date(),
+      paymentDetails: {
+        orderId,
+        transactionStatus,
+        paymentTime: new Date(),
+        paymentMethod: data.payment_type,
+        ...data
+      }
+    });
 
-    return NextResponse.json({ success: true });
+    // Return success response
+    return NextResponse.json({ 
+      success: true,
+      status,
+      message: 'Payment status updated successfully'
+    });
   } catch (error) {
     console.error('Payment callback error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { 
+        success: false, 
+        error: 'Internal server error'
+      },
       { status: 500 }
     );
   }

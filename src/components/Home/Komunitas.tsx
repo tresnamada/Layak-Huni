@@ -42,7 +42,7 @@ export default function Komunitas() {
               className="text-[#594C1A]/80 text-sm sm:text-base font-medium tracking-wider"
               variants={containerVariants}
             >
-              KOMUNITAS SIAHUNI
+              KOMUNITAS SIAP HUNI
             </motion.span>
             <motion.h2 
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[#594C1A] leading-tight"

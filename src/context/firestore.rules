@@ -111,14 +111,26 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
     
-    // Allow reads to users collection (needed for AI design generation)
+    // Users collection rules
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      allow write: if isOwner(userId) || isAdmin();
       
       // Allow authenticated users to create their own design documents
       match /generatedDesigns/{designId} {
         allow read, write: if isOwner(userId);
+      }
+
+      // Saved Posts subcollection rules
+      match /savedPosts/{postId} {
+        // Allow read if user is the owner
+        allow read: if isOwner(userId);
+        
+        // Allow create/delete if user is the owner
+        allow create, delete: if isOwner(userId);
+        
+        // No updates allowed (only create/delete)
+        allow update: if false;
       }
     }
     
@@ -136,14 +148,26 @@ service cloud.firestore {
         get(/databases/$(database)/documents/communityPosts/$(postId)).data.authorId == request.auth.uid;
     }
 
-    // Comments rules
-    match /comments/{commentId} {
+    // Posts collection rules
+    match /posts/{postId} {
       allow read: if true;
-      allow create: if isAuthenticated();
       
-      // Allow update/delete if user is the comment owner
+      // Allow create if authenticated and image size is valid
+      allow create: if isAuthenticated() && 
+        (!request.resource.data.keys().hasAny(['imageUrl']) || 
+        isValidImageSize(request.resource.data.imageUrl));
+      
+      // Allow update/delete if user is the post owner
       allow update, delete: if isAuthenticated() && 
         resource.data.authorId == request.auth.uid;
+
+      // Comments subcollection rules
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && 
+          resource.data.authorId == request.auth.uid;
+      }
     }
 
     // Post Likes rules

@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Tab } from '@headlessui/react';
 import { FiMail, FiPhone, FiMapPin, FiEdit, FiMessageSquare, FiCamera, FiBookmark, FiHome, FiLogOut } from 'react-icons/fi';
-import { getProfile, isProfileComplete } from '@/services/profileService';
+import { getProfile, isProfileComplete, updateProfile } from '@/services/profileService';
 import { getAuth, signOut } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { getUserPurchases, PurchaseData } from '@/services/purchaseService';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ import { getUserGeneratedDesigns, GeneratedDesign } from '@/services/designServi
 import { getUserConsultations, Consultation } from '@/services/consultationService';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useArchitect } from '@/hooks/useArchitect';
+import { uploadProfileImage } from '@/services/storageService';
 
 const auth = getAuth();
 
@@ -31,6 +32,8 @@ interface ProfileData {
 export default function ProfilePage() {
   const [selectedTab, setSelectedTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [editedUser, setEditedUser] = useState<ProfileData>({
     firstName: '',
     lastName: '',
@@ -45,10 +48,21 @@ export default function ProfilePage() {
   const [purchases, setPurchases] = useState<PurchaseData[]>([]);
   const [savedDesigns, setSavedDesigns] = useState<GeneratedDesign[]>([]);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
-  const router = useRouter();
   const { isAdminUser } = useAdmin();
   const { isArchitectUser } = useArchitect();
   
+  // Handle tab selection from URL
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'purchases') {
+      setSelectedTab(0); // Assuming purchases is the first tab
+    } else if (tab === 'designs') {
+      setSelectedTab(1);
+    } else if (tab === 'consultations') {
+      setSelectedTab(2);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -791,7 +805,199 @@ export default function ProfilePage() {
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: "spring", duration: 0.5 }}
             >
-              {/* Modal content will be added in the next iteration */}
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
+                  <motion.button
+                    onClick={() => setIsEditing(false)}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </motion.button>
+                </div>
+
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setLoading(true);
+                  setError(null);
+
+                  try {
+                    if (!auth.currentUser) {
+                      setError('User not authenticated');
+                      return;
+                    }
+                    const { success, error: updateError } = await updateProfile(auth.currentUser.uid, editedUser);
+                    if (success) {
+                      setIsEditing(false);
+                    } else {
+                      setError(updateError || 'Failed to update profile');
+                    }
+                  } catch (err) {
+                    console.error('Error updating profile:', err);
+                    setError('An unexpected error occurred');
+                  } finally {
+                    setLoading(false);
+                  }
+                }} className="space-y-6">
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 bg-red-50 rounded-xl text-red-600 text-sm"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        id="firstName"
+                        value={editedUser.firstName}
+                        onChange={(e) => setEditedUser(prev => ({ ...prev, firstName: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        id="lastName"
+                        value={editedUser.lastName}
+                        onChange={(e) => setEditedUser(prev => ({ ...prev, lastName: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        id="phone"
+                        value={editedUser.phone}
+                        onChange={(e) => setEditedUser(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                        Address
+                      </label>
+                      <textarea
+                        id="address"
+                        value={editedUser.address}
+                        onChange={(e) => setEditedUser(prev => ({ ...prev, address: e.target.value }))}
+                        rows={3}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#594C1A] focus:border-[#594C1A]"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Profile Image
+                      </label>
+                      <div className="mt-1 flex items-center space-x-4">
+                        <div className="relative h-20 w-20">
+                          {previewImage ? (
+                            <Image
+                              src={previewImage}
+                              alt="Profile preview"
+                              fill
+                              className="rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full rounded-full bg-gray-100 flex items-center justify-center">
+                              <FiCamera className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <input
+                            type="file"
+                            id="profileImage"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  const { success, data, error: uploadError } = await uploadProfileImage(file);
+                                  if (success && data) {
+                                    setEditedUser(prev => ({ ...prev, profileImage: data.url }));
+                                    setPreviewImage(data.url);
+                                  } else {
+                                    setError(uploadError || 'Failed to upload image');
+                                  }
+                                } catch (err) {
+                                  console.error('Error uploading image:', err);
+                                  setError('Failed to upload image');
+                                }
+                              }
+                            }}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="profileImage"
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+                          >
+                            <FiCamera className="w-4 h-4 mr-2" />
+                            Change Photo
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <motion.button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Cancel
+                    </motion.button>
+                    <motion.button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 px-4 py-2 bg-gradient-to-r from-[#594C1A] to-[#938656] text-white rounded-xl font-medium hover:from-[#938656] hover:to-[#594C1A] disabled:opacity-70 disabled:cursor-not-allowed"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      {loading ? (
+                        <div className="flex items-center justify-center">
+                          <motion.div
+                            className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          />
+                          <span className="ml-2">Saving...</span>
+                        </div>
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </motion.button>
+                  </div>
+                </form>
+              </div>
             </motion.div>
           </motion.div>
         )}

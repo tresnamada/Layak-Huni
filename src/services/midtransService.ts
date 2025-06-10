@@ -32,19 +32,23 @@ export const initializeMidtransPayment = async (paymentDetails: PaymentDetails) 
     snap.pay(data.token, {
       onSuccess: function(result: any) {
         console.log('Payment success:', result);
-        return { success: true, data: result };
+        // Only redirect on success
+        window.location.href = '/Profile?tab=purchases';
       },
       onPending: function(result: any) {
         console.log('Payment pending:', result);
-        return { success: true, data: result, status: 'pending' };
+        // Show pending message to user
+        alert('Pembayaran sedang diproses. Silakan selesaikan pembayaran Anda.');
       },
       onError: function(result: any) {
         console.error('Payment error:', result);
-        return { success: false, error: result };
+        // Show error message to user
+        alert('Terjadi kesalahan saat pembayaran. Silakan coba lagi.');
       },
       onClose: function() {
         console.log('Customer closed the popup without finishing the payment');
-        return { success: false, error: 'Payment cancelled' };
+        // Show message to user
+        alert('Pembayaran dibatalkan. Silakan coba lagi jika ingin melanjutkan pembelian.');
       }
     });
 

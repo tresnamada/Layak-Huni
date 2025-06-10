@@ -1,13 +1,23 @@
 "use client"
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { MessageSquare, Share2, User, PlusCircle, Grid, X, Trash2, Image as ImageIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare, Share2, User, PlusCircle, Grid, X, Trash2, Image as ImageIcon, Send, MessageCircle, Bookmark } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { useCommunity } from '@/context/CommunityContext';
 import { useAuth } from '@/context/AuthContext';
 import { CommunityPost, convertImageToBase64 } from '@/services/communityService';
 import { getProfile } from '@/services/profileService';
+import { doc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp, deleteDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
+
+interface Comment {
+  id: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Timestamp;
+}
 
 interface NewPostForm {
   title: string;
@@ -17,8 +27,11 @@ interface NewPostForm {
   image?: File;
 }
 
+type ViewMode = 'all' | 'discussion' | 'collaboration' | 'workshop' | 'general' | 'saved';
+
 export default function KomunitasDesainInterior() {
   const [activeTab, setActiveTab] = useState<string>('trending');
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [showPostForm, setShowPostForm] = useState<boolean>(false);
   const [newPost, setNewPost] = useState<NewPostForm>({
     title: '',
@@ -29,6 +42,13 @@ export default function KomunitasDesainInterior() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [expandedPost, setExpandedPost] = useState<string | null>(null);
+  const [comments, setComments] = useState<{ [key: string]: Comment[] }>({});
+  const [newComment, setNewComment] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [savedPosts, setSavedPosts] = useState<string[]>([]);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -37,7 +57,6 @@ export default function KomunitasDesainInterior() {
     loading, 
     fetchPosts, 
     createNewPost,
-    toggleLike,
     deletePost
   } = useCommunity();
 
@@ -53,8 +72,92 @@ export default function KomunitasDesainInterior() {
     fetchInitialPosts();
   }, [activeTab, fetchPosts]);
 
+  useEffect(() => {
+    // Load saved posts when user is authenticated
+    if (user) {
+      const loadSavedPosts = async () => {
+        try {
+          const savedRef = collection(db, 'users', user.uid, 'savedPosts');
+          const unsubscribe = onSnapshot(savedRef, (snapshot) => {
+            const savedIds: string[] = [];
+            snapshot.forEach((doc) => {
+              savedIds.push(doc.id);
+            });
+            setSavedPosts(savedIds);
+          });
+          return unsubscribe;
+        } catch (err) {
+          console.error('Error loading saved posts:', err);
+        }
+      };
+      loadSavedPosts();
+    }
+  }, [user]);
+
   const handlePostClick = (postId: string) => {
-    router.push(`/Komunitas/diskusi/${postId}`);
+    setExpandedPost(expandedPost === postId ? null : postId);
+    if (expandedPost !== postId) {
+      // Load comments when expanding a post
+      loadComments(postId);
+    }
+  };
+
+  const loadComments = async (postId: string) => {
+    try {
+      const postRef = doc(db, 'posts', postId);
+      const commentsRef = collection(postRef, 'comments');
+      const q = query(commentsRef, orderBy('createdAt', 'desc'));
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const commentsList: Comment[] = [];
+        snapshot.forEach((doc) => {
+          commentsList.push({
+            id: doc.id,
+            ...doc.data()
+          } as Comment);
+        });
+        setComments(prev => ({
+          ...prev,
+          [postId]: commentsList
+        }));
+      });
+
+      return unsubscribe;
+    } catch (err) {
+      console.error('Error loading comments:', err);
+    }
+  };
+
+  const handleCommentSubmit = async (e: React.FormEvent, postId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user || !newComment.trim()) return;
+
+    setCommentLoading(true);
+    try {
+      const postRef = doc(db, 'posts', postId);
+      const commentsRef = collection(postRef, 'comments');
+      
+      // Get user's profile to use their full name
+      const { success, data: profileData } = await getProfile(user.uid);
+      const authorName = success && profileData 
+        ? `${profileData.firstName} ${profileData.lastName}`.trim()
+        : user.displayName || 'Anonymous';
+
+      await addDoc(commentsRef, {
+        content: newComment.trim(),
+        authorId: user.uid,
+        authorName,
+        createdAt: serverTimestamp()
+      });
+
+      setNewComment('');
+    } catch (err) {
+      console.error('Error adding comment:', err);
+    } finally {
+      setCommentLoading(false);
+    }
   };
 
   const handleNewPostClick = () => {
@@ -91,7 +194,8 @@ export default function KomunitasDesainInterior() {
       reader.readAsDataURL(file);
 
       setNewPost(prev => ({ ...prev, image: file }));
-    } catch (error) {
+    } catch (err) {
+      console.error('Error processing image:', err);
       setImageError('Failed to process image');
       setImagePreview(null);
       if (fileInputRef.current) {
@@ -118,7 +222,8 @@ export default function KomunitasDesainInterior() {
       if (newPost.image) {
         try {
           imageUrl = await convertImageToBase64(newPost.image);
-        } catch (error) {
+        } catch (err) {
+          console.error('Error converting image:', err);
           setImageError('Failed to process image');
           return;
         }
@@ -144,21 +249,12 @@ export default function KomunitasDesainInterior() {
       setNewPost({ title: '', content: '', tags: '', category: 'discussion' });
       setImagePreview(null);
       setShowPostForm(false);
-    } catch (error) {
-      console.error('Error creating post:', error);
-      if (error instanceof Error && error.message.includes('Image size')) {
-        setImageError(error.message);
+    } catch (err) {
+      console.error('Error creating post:', err);
+      if (err instanceof Error && err.message.includes('Image size')) {
+        setImageError(err.message);
       }
     }
-  };
-
-  const handleLikeClick = async (e: React.MouseEvent, postId: string) => {
-    e.stopPropagation(); // Prevent post click event
-    if (!user) {
-      router.push('/Login');
-      return;
-    }
-    await toggleLike(postId);
   };
 
   const handleDeletePost = async (e: React.MouseEvent, postId: string) => {
@@ -180,6 +276,48 @@ export default function KomunitasDesainInterior() {
       }
     }
   };
+
+  const handleShareClick = (e: React.MouseEvent, postId: string) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/Komunitas/diskusi/${postId}`;
+    setShareUrl(url);
+    setShowShareModal(true);
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Link berhasil disalin!');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('Gagal menyalin link');
+    }
+  };
+
+  const toggleSavePost = async (postId: string) => {
+    if (!user) {
+      router.push('/Login');
+      return;
+    }
+
+    try {
+      const savedRef = doc(db, 'users', user.uid, 'savedPosts', postId);
+      if (savedPosts.includes(postId)) {
+        await deleteDoc(savedRef);
+      } else {
+        await setDoc(savedRef, { savedAt: serverTimestamp() });
+      }
+    } catch (err) {
+      console.error('Error toggling saved post:', err);
+    }
+  };
+
+  const filteredPosts = posts.filter(post => {
+    if (!post.id) return false;
+    if (viewMode === 'all') return true;
+    if (viewMode === 'saved') return savedPosts.includes(post.id);
+    return post.category === viewMode;
+  });
 
   const container = {
     hidden: { opacity: 0 },
@@ -224,28 +362,85 @@ export default function KomunitasDesainInterior() {
               </div>
               
               <div className="space-y-3 font-jakarta">
-                <button className="flex items-center space-x-3 w-full py-2 px-3 rounded-lg hover:bg-[#EAF4DE] transition-all">
+                <button 
+                  onClick={() => setViewMode('all')}
+                  className={`flex items-center space-x-3 w-full py-2 px-3 rounded-lg transition-all ${
+                    viewMode === 'all' ? 'bg-[#EAF4DE] text-[#594C1A] font-medium' : 'hover:bg-[#EAF4DE]'
+                  }`}
+                >
                   <Grid size={18} className="text-[#938656]" />
                   <span>Semua Postingan</span>
                 </button>
-                <button className="flex items-center space-x-3 w-full py-2 px-3 rounded-lg bg-[#EAF4DE] text-[#594C1A] font-medium">
+                <button 
+                  onClick={() => setViewMode('discussion')}
+                  className={`flex items-center space-x-3 w-full py-2 px-3 rounded-lg transition-all ${
+                    viewMode === 'discussion' ? 'bg-[#EAF4DE] text-[#594C1A] font-medium' : 'hover:bg-[#EAF4DE]'
+                  }`}
+                >
                   <MessageSquare size={18} className="text-[#938656]" />
                   <span>Diskusi</span>
                 </button>
                 {user && (
-                  <button className="flex items-center space-x-3 w-full py-2 px-3 rounded-lg hover:bg-[#EAF4DE] transition-all">
+                  <button 
+                    onClick={() => setViewMode('saved')}
+                    className={`flex items-center space-x-3 w-full py-2 px-3 rounded-lg transition-all ${
+                      viewMode === 'saved' ? 'bg-[#EAF4DE] text-[#594C1A] font-medium' : 'hover:bg-[#EAF4DE]'
+                    }`}
+                  >
+                    <Bookmark size={18} className="text-[#938656]" />
                     <span>Disimpan</span>
                   </button>
                 )}
               </div>
               
               <div className="mt-8">
+                <h3 className="text-sm font-medium text-[#938656] mb-3 font-jakarta">Kategori</h3>
+                <div className="space-y-2">
+                  <button 
+                    onClick={() => setViewMode('collaboration')}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
+                      viewMode === 'collaboration' ? 'bg-[#EAF4DE] text-[#594C1A] font-medium' : 'hover:bg-[#EAF4DE]'
+                    }`}
+                  >
+                    Kolaborasi
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('workshop')}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
+                      viewMode === 'workshop' ? 'bg-[#EAF4DE] text-[#594C1A] font-medium' : 'hover:bg-[#EAF4DE]'
+                    }`}
+                  >
+                    Workshop
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('general')}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
+                      viewMode === 'general' ? 'bg-[#EAF4DE] text-[#594C1A] font-medium' : 'hover:bg-[#EAF4DE]'
+                    }`}
+                  >
+                    Umum
+                  </button>
+                </div>
+              </div>
+              
+              <div className="mt-8">
                 <h3 className="text-sm font-medium text-[#938656] mb-3 font-jakarta">Tag Populer</h3>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(new Set(posts.flatMap(post => post.tags))).slice(0, 5).map(tag => (
-                    <span key={tag} className="px-3 py-1 text-xs rounded-full bg-[#EAF4DE] text-[#594C1A]">
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        // Filter posts by tag
+                        const postsWithTag = posts.filter(post => post.tags.includes(tag));
+                        if (postsWithTag.length > 0) {
+                          setViewMode('all');
+                          // You might want to add a tag filter state to show only posts with this tag
+                        }
+                      }}
+                      className="px-3 py-1 text-xs rounded-full bg-[#EAF4DE] text-[#594C1A] hover:bg-[#594C1A] hover:text-white transition-colors"
+                    >
                       #{tag}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -418,7 +613,7 @@ export default function KomunitasDesainInterior() {
               initial="hidden"
               animate="show"
             >
-              {posts.map((post: CommunityPost) => (
+              {filteredPosts.map((post: CommunityPost) => (
                 <motion.div 
                   key={post.id}
                   className="bg-white rounded-xl shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
@@ -469,15 +664,101 @@ export default function KomunitasDesainInterior() {
                     <div className="flex items-center space-x-4 pt-4 border-t border-gray-100">
                       <button 
                         className="flex items-center space-x-1 text-[#938656] hover:text-[#594C1A]"
-                        onClick={(e) => post.id && handleLikeClick(e, post.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (post.id) {
+                            handlePostClick(post.id);
+                          }
+                        }}
                       >
-                        <MessageSquare size={16} />
-                        <span>{post.comments}</span>
+                        <MessageCircle size={16} />
+                        <span>{post.id ? (comments[post.id]?.length || 0) : 0}</span>
                       </button>
-                      <button className="flex items-center space-x-1 text-[#938656] hover:text-[#594C1A]">
+                      <button 
+                        className="flex items-center space-x-1 text-[#938656] hover:text-[#594C1A]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (post.id) {
+                            handleShareClick(e, post.id);
+                          }
+                        }}
+                      >
                         <Share2 size={16} />
+                        <span>Bagikan</span>
                       </button>
+                      {user && post.id && (
+                        <button 
+                          className={`flex items-center space-x-1 ${
+                            savedPosts.includes(post.id) ? 'text-[#594C1A]' : 'text-[#938656] hover:text-[#594C1A]'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSavePost(post.id);
+                          }}
+                        >
+                          <Bookmark size={16} fill={savedPosts.includes(post.id) ? 'currentColor' : 'none'} />
+                          <span>Simpan</span>
+                        </button>
+                      )}
                     </div>
+
+                    {/* Comments Section */}
+                    {expandedPost === post.id && (
+                      <div className="mt-4 pt-4 border-t border-gray-100" onClick={e => e.stopPropagation()}>
+                        <h4 className="text-sm font-medium text-[#594C1A] mb-4">Komentar</h4>
+                        
+                        {/* Comment Form */}
+                        {user && (
+                          <form onSubmit={(e) => post.id && handleCommentSubmit(e, post.id)} className="mb-4">
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                placeholder="Tulis komentar..."
+                                className="flex-1 px-4 py-2 border border-[#EAF4DE] rounded-lg focus:ring-2 focus:ring-[#594C1A] focus:border-transparent"
+                              />
+                              <button
+                                type="submit"
+                                disabled={commentLoading || !newComment.trim()}
+                                className="px-4 py-2 bg-[#594C1A] text-white rounded-lg hover:bg-[#938656] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {commentLoading ? (
+                                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Send size={20} />
+                                )}
+                              </button>
+                            </div>
+                          </form>
+                        )}
+
+                        {/* Comments List */}
+                        <div className="space-y-4">
+                          {comments[post.id]?.map((comment) => (
+                            <div key={comment.id} className="flex gap-3">
+                              <div className="w-8 h-8 rounded-full bg-[#EAF4DE] flex items-center justify-center flex-shrink-0">
+                                <User size={16} className="text-[#594C1A]" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm text-[#594C1A]">{comment.authorName}</span>
+                                  <span className="text-xs text-[#938656]">
+                                    {comment.createdAt?.toDate()?.toLocaleDateString() || 'Just now'}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-[#594C1A]/90">{comment.content}</p>
+                              </div>
+                            </div>
+                          ))}
+                          {(!comments[post.id] || comments[post.id].length === 0) && (
+                            <p className="text-sm text-[#938656] text-center py-4">
+                              Belum ada komentar. Jadilah yang pertama berkomentar!
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -485,6 +766,53 @@ export default function KomunitasDesainInterior() {
           </div>
         </div>
       </main>
+
+      {/* Share Modal */}
+      <AnimatePresence>
+        {showShareModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowShareModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-[#594C1A]">Bagikan Postingan</h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={shareUrl}
+                  readOnly
+                  className="w-full px-4 py-2 border border-[#EAF4DE] rounded-lg bg-gray-50"
+                />
+              </div>
+              
+              <button
+                onClick={copyToClipboard}
+                className="w-full px-4 py-2 bg-[#594C1A] text-white rounded-lg hover:bg-[#938656] transition-colors"
+              >
+                Salin Link
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -121,7 +121,7 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
       setPaymentLoading(true);
       const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(7)}`;
       
-      // Create purchase record first
+      // Check if user and house data are available
       if (!user || !house) {
         throw new Error('User or house data not available');
       }
@@ -139,6 +139,9 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
         orderId
       );
 
+      // Store purchase ID in localStorage for payment callback
+      localStorage.setItem('currentPurchaseId', purchaseId);
+
       // Initialize payment
       await initializeMidtransPayment({
         orderId,
@@ -149,15 +152,14 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
         email: userDetails.email,
         phone: userDetails.phone
       });
-
-      // Store purchase ID in localStorage for payment callback
-      localStorage.setItem('currentPurchaseId', purchaseId);
+      
+      // Close the form modal
+      setShowUserForm(false);
     } catch (error) {
       console.error('Payment error:', error);
       setError('Gagal memulai pembayaran. Silakan coba lagi.');
     } finally {
       setPaymentLoading(false);
-      setShowUserForm(false);
     }
   };
 
@@ -289,21 +291,38 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
 
             {/* Materials */}
             <div className="bg-white rounded-xl p-6 shadow-lg">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Material Utama</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">Material</h2>
               <div className="space-y-4">
-                <div className="flex items-center text-gray-600">
-                  <CheckCircle size={20} className="text-amber-500 mr-2" />
-                  <span className="flex-1">{house?.mainMaterial.name}</span>
-                  <span className="font-medium">{house?.mainMaterial.quantity} {house?.mainMaterial.unit}</span>
-                </div>
+                {house?.materials.map((material, index) => (
+                  <div key={index} className="flex items-center text-gray-600">
+                    <CheckCircle size={20} className="text-amber-500 mr-2" />
+                    <span className="flex-1">{material.name}</span>
+                    <span className="font-medium">{material.quantity} {material.unit}</span>
+                  </div>
+                ))}
                 <div className="text-right">
-                  <span className="text-sm text-gray-500">Biaya Material</span>
+                  <span className="text-sm text-gray-500">Total Biaya Material</span>
                   <p className="text-lg font-semibold text-gray-800">
-                    {house && formatPrice(house.mainMaterial.price)}
+                    {house && formatPrice(house.estimatedCost.materialCost)}
                   </p>
                 </div>
               </div>
             </div>
+
+            {/* Features */}
+            {house?.features && house.features.length > 0 && (
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Fitur</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {house.features.map((feature, index) => (
+                    <div key={index} className="flex items-center text-gray-600">
+                      <CheckCircle size={20} className="text-amber-500 mr-2" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Estimated Costs */}
             <div className="bg-white rounded-xl p-6 shadow-lg">
