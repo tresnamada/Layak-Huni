@@ -130,7 +130,7 @@ export default function Komunitas() {
             transition={{ duration: 0.3 }}
           >
             <Image
-              src="/komunitas/discuss.jpeg"
+              src="/komunitas/Discuss.jpeg"
               alt="Diskusi Desain"
               fill
               className="object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
@@ -156,7 +156,7 @@ export default function Komunitas() {
             transition={{ duration: 0.3 }}
           >
             <Image
-              src="/komunitas/community.jpeg"
+              src="/komunitas/Community.jpeg"
               alt="Meetup Komunitas"
               fill
               className="object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
@@ -182,7 +182,7 @@ export default function Komunitas() {
             transition={{ duration: 0.3 }}
           >
             <Image
-              src="/komunitas/workshop.jpeg"
+              src="/komunitas/Workshop.jpeg"
               alt="Workshop"
               fill
               className="object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
@@ -208,7 +208,7 @@ export default function Komunitas() {
             transition={{ duration: 0.3 }}
           >
             <Image
-              src="/komunitas/collab.jpeg"
+              src="/komunitas/Collab.jpeg"
               alt="Proyek Kolaborasi"
               fill
               className="object-cover rounded-xl transition-transform duration-500 group-hover:scale-105"
