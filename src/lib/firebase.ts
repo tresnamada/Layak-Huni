@@ -14,7 +14,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID!,
 };
 
-// ⛔ Jangan pake `var` atau `let` buat `app`
+
 export const app: FirebaseApp = !getApps().length
   ? initializeApp(firebaseConfig)
   : getApp();
