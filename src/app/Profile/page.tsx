@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Tab } from '@headlessui/react';
@@ -29,7 +29,7 @@ interface ProfileData {
   joinDate: string;
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const [selectedTab, setSelectedTab] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
@@ -1003,5 +1003,13 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProfilePageContent />
+    </Suspense>
   );
 }

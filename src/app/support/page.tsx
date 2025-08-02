@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { createSupportThread, SupportThread } from '@/services/supportService';
 import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
 import Navbar from '@/components/Navbar';
 import { 
   MessageSquare,
@@ -17,7 +17,7 @@ import {
   Plus
 } from 'lucide-react';
 
-export default function SupportPage() {
+function SupportPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -266,4 +266,12 @@ export default function SupportPage() {
       </div>
     </div>
   );
-} 
+}
+
+export default function SupportPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SupportPageContent />
+    </Suspense>
+  );
+}

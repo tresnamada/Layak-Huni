@@ -6,11 +6,10 @@ import { collection, getDocs, query, orderBy, limit, getDoc, doc } from 'firebas
 import { isAdmin, setUserAsAdmin, removeUserAsAdmin } from '@/services/adminService';
 import { isArchitect, setUserAsArchitect, removeUserAsArchitect } from '@/services/architectService';
 import { useRouter } from 'next/navigation';
-import { app, db } from '@/firebase';
+import { app, db } from '@/lib/firebase';
 import {
   Search,
   Filter,
-  Calendar,
   UserPlus,
   UserMinus,
   ChevronDown,

@@ -1,18 +1,16 @@
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { 
   collection, 
   addDoc, 
-  doc, 
-  getDoc,
-  getDocs,
+  serverTimestamp, 
   query, 
-  where, 
   orderBy, 
-  onSnapshot,
-  serverTimestamp,
+  onSnapshot, 
+  doc, 
   updateDoc,
-  Timestamp,
-  DocumentData
+  where, 
+  getDocs,
+  Timestamp
 } from 'firebase/firestore';
 
 export interface ChatMessage {

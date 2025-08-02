@@ -14,13 +14,12 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false); // dipakai utk Google & Submit
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsSubmitting(true);
+    setLoading(true); // sama kayak isSubmitting
 
     try {
       const { user, error } = await registerUser(email, password);
@@ -29,10 +28,10 @@ const Register = () => {
       } else {
         setError(error || 'Failed to register');
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -47,7 +46,7 @@ const Register = () => {
       } else if (user) {
         router.push('/');
       }
-    } catch (err) {
+    } catch {
       setError('Terjadi kesalahan yang tidak terduga');
     } finally {
       setLoading(false);
@@ -56,16 +55,11 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1a1f2c] relative overflow-hidden">
-      {/* Background Image with Overlay */}
       <div className="absolute inset-0 w-full h-full">
         <motion.img
           initial={{ scale: 1.05, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.2 }}
-          transition={{ 
-            duration: 5, 
-            ease: "easeOut",
-            opacity: { duration: 1.5 }
-          }}
+          transition={{ duration: 5, ease: "easeOut", opacity: { duration: 1.5 } }}
           className="object-cover w-full h-full"
           src="/HeroHome.png"
           alt="Background"
@@ -94,7 +88,7 @@ const Register = () => {
               className="mx-auto"
             />
           </motion.div>
-          <motion.h2 
+          <motion.h2
             className="text-3xl font-bold text-white mb-2"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -102,7 +96,7 @@ const Register = () => {
           >
             Buat Akun Baru
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-gray-300"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -258,17 +252,12 @@ const Register = () => {
             whileTap={{ scale: 0.99 }}
             className="mt-4 w-full flex items-center justify-center gap-3 bg-gray-800/50 border border-gray-700 rounded-lg py-3 px-4 hover:bg-gray-800 transition-all duration-300 text-white"
           >
-            <Image
-              src="/google.svg"
-              alt="Google"
-              width={20}
-              height={20}
-            />
+            <Image src="/google.svg" alt="Google" width={20} height={20} />
             <span>Daftar dengan Google</span>
           </motion.button>
         </div>
 
-        <motion.div 
+        <motion.div
           className="mt-6 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

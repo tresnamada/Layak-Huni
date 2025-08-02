@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { getUserConsultations, type Consultation } from "@/services/consultationService"
 import { useRouter } from "next/navigation"
@@ -19,21 +19,11 @@ import Navbar from "@/components/Navbar"
 export default function ConsultationsPage() {
   const { user, loading: authLoading } = useAuth({ redirectToLogin: true })
   const router = useRouter()
-
   const [consultations, setConsultations] = useState<Consultation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Load consultations when user auth state is ready
-  useEffect(() => {
-    if (authLoading) return
-
-    if (user) {
-      fetchConsultations()
-    }
-  }, [user, authLoading])
-
-  const fetchConsultations = async () => {
+  const fetchConsultations = useCallback(async () => {
     if (!user) return
 
     setLoading(true)
@@ -41,19 +31,28 @@ export default function ConsultationsPage() {
 
     try {
       const result = await getUserConsultations(user.uid)
-
       if (result.success) {
         setConsultations(result.consultations)
       } else {
-        setError(result.error || "Gagal mengambil data konsultasi")
+        setError(result.error || 'Gagal memuat daftar konsultasi')
       }
     } catch (err) {
-      console.error("Error fetching consultations:", err)
-      setError("Terjadi kesalahan saat mengambil data konsultasi")
+      console.error('Error fetching consultations:', err)
+      setError('Terjadi kesalahan saat memuat daftar konsultasi')
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (authLoading) return
+
+    if (user) {
+      fetchConsultations()
+    }
+  }, [user, authLoading, fetchConsultations])
+
+
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -338,3 +337,4 @@ export default function ConsultationsPage() {
     </div>
   )
 }
+              

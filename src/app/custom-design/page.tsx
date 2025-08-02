@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiHome, FiDollarSign, FiMapPin, FiLayers, FiCheck, FiArrowRight, FiMessageSquare, FiLoader, FiDownload, FiSave, FiList } from 'react-icons/fi';
+import { FiHome, FiDollarSign, FiMapPin, FiLayers, FiCheck, FiArrowRight, FiMessageSquare, FiLoader, FiDownload, FiList } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { saveGeneratedDesign, getUserGeneratedDesigns } from '@/services/designService';
+import { saveGeneratedDesign, } from '@/services/designService';
 
 interface DesignStep {
   id: string;
@@ -126,7 +126,7 @@ const locationOptions: LocationOption[] = [
 ];
 
 export default function CustomDesignPage() {
-  const { user, loading } = useAuth({ redirectToLogin: true });
+  const { user } = useAuth({ redirectToLogin: true });
   const router = useRouter();
   
   const [currentStep, setCurrentStep] = useState(0);
@@ -150,7 +150,7 @@ export default function CustomDesignPage() {
     considerations: string[];
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [savedMessage, setSavedMessage] = useState('');
+
 
   const designSteps: DesignStep[] = [
     {
@@ -446,37 +446,7 @@ export default function CustomDesignPage() {
     }
   };
 
-  const handleSaveDesign = async (design: AIDesignSuggestion) => {
-    if (!user) {
-      alert('Anda harus login untuk menyimpan desain');
-      router.push('/Login');
-      return;
-    }
 
-    setIsSaving(true);
-    setSavedMessage('');
-    
-    try {
-      const result = await saveGeneratedDesign(user.uid, {
-        ...design,
-        prompt: userDescription
-      });
-      
-      if (result.success) {
-        setSavedMessage('Desain berhasil disimpan!');
-        setTimeout(() => {
-          setSavedMessage('');
-        }, 3000);
-      } else {
-        throw new Error(result.error || 'Gagal menyimpan desain');
-      }
-    } catch (error) {
-      console.error('Error saving design:', error);
-      alert(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const goToSavedDesigns = () => {
     router.push('/Profile/saved-designs');
@@ -518,15 +488,25 @@ export default function CustomDesignPage() {
           throw new Error('Format respons fitur tidak valid');
         }
 
+        type AIFeature = {
+          id?: string;
+          name: string;
+          description: string;
+          category: 'exterior' | 'interior' | 'material' | 'sustainability';
+          compatibility?: string[];
+          estimatedPrice: number;
+        };
+        
         // Convert AI-generated features to the app's DesignFeature format
-        const aiFeatures = parsedResponse.features.map((feature: any) => ({
+        const aiFeatures = parsedResponse.features.map((feature: AIFeature) => ({
           id: feature.id || `feature-${Math.random().toString(36).substr(2, 9)}`,
           name: feature.name,
           description: feature.description,
-          category: feature.category as 'exterior' | 'interior' | 'material' | 'sustainability',
+          category: feature.category,
           compatibleStyles: feature.compatibility || [selectedDesign.style],
-          estimatedPrice: feature.estimatedPrice
+          estimatedPrice: feature.estimatedPrice,
         }));
+        
 
         // Replace static features with AI-generated ones for this session
         setSelectedFeatures([]); // Reset any previously selected features
@@ -1128,10 +1108,24 @@ export default function CustomDesignPage() {
                     </button>
                     <button
                       onClick={handleDownloadDesign}
-                      className="px-6 py-3 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-colors flex items-center"
+                      disabled={isSaving}
+                      className={`px-6 py-3 rounded-xl font-medium transition-colors flex items-center ${
+                        isSaving
+                          ? 'bg-amber-400 text-white cursor-not-allowed'
+                          : 'bg-amber-600 text-white hover:bg-amber-700'
+                      }`}
                     >
-                      <FiDownload className="mr-2" />
-                      Simpan Desain
+                      {isSaving ? (
+                        <>
+                          <FiLoader className="mr-2 animate-spin" />
+                          Menyimpan...
+                        </>
+                      ) : (
+                        <>
+                          <FiDownload className="mr-2" />
+                          Simpan Desain
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

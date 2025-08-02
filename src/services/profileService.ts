@@ -1,6 +1,6 @@
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
-import { User } from 'firebase/auth';
+
 
 interface ProfileData {
   firstName: string;

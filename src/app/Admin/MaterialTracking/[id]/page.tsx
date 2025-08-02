@@ -4,8 +4,8 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth } from 'firebase/auth';
 import { isAdmin } from '@/services/adminService';
-import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { 
   ChevronLeft,
@@ -13,9 +13,7 @@ import {
   Truck,
   CheckCircle,
   Plus,
-  Calendar,
   AlertCircle,
-  Save,
   Trash2
 } from 'lucide-react';
 

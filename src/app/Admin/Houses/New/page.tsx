@@ -7,10 +7,11 @@ import Link from 'next/link';
 import { ChevronLeft, Save, AlertTriangle, Plus, Trash2, Upload } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ImageUploader from '@/components/Admin/ImageUploader';
-import { addHouse, HouseFormData, Blueprint } from '@/services/houseService';
+import { addHouse, HouseFormData, Blueprint, ConstructionStage } from '@/services/houseService';
 import { isAdmin } from '@/services/adminService';
 import { useAdmin } from '@/hooks/useAdmin';
 import { compressImage } from '@/utils/imageCompression';
+import Image from 'next/image';
 
 interface FormError {
   [key: string]: string;
@@ -162,7 +163,7 @@ const BlueprintUploader: React.FC<BlueprintUploaderProps> = ({ onBlueprintChange
       </button>
       {previewUrl && (
         <div className="mt-4">
-          <img
+          <Image
             src={previewUrl}
             alt="Blueprint preview"
             className="max-w-full h-auto rounded-lg"
@@ -345,12 +346,15 @@ export default function AddHousePage() {
   const addConstructionStage = () => {
     const duration = Number(newStage.duration);
     if (newStage.name && !isNaN(duration) && duration > 0) {
+      const stageToAdd: ConstructionStage = {
+        name: newStage.name,
+        description: newStage.description,
+        duration: duration,
+        status: 'pending',
+      };
       setFormData(prev => ({
         ...prev,
-        constructionStages: [...prev.constructionStages, {
-          ...newStage,
-          duration: duration
-        }]
+        constructionStages: [...prev.constructionStages, stageToAdd]
       }));
       setNewStage({ name: '', duration: '', description: '' });
     }
@@ -894,7 +898,7 @@ export default function AddHousePage() {
                   <div key={index} className="flex items-center gap-2">
                     <div className="flex-1">
                       <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
-                        <img
+                        <Image
                           src={blueprint.url}
                           alt={blueprint.description}
                           className="w-full h-full object-contain"

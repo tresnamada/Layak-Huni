@@ -15,6 +15,7 @@ import Navbar from '@/components/Navbar';
 import { useCommunity } from '@/context/CommunityContext';
 import { useAuth } from '@/context/AuthContext';
 import { getProfile } from '@/services/profileService';
+import Image from 'next/image';
 
 export default function PostDetail() {
   const params = useParams();
@@ -154,7 +155,7 @@ export default function PostDetail() {
 
             {selectedPost.imageUrl && (
               <div className="mb-6 rounded-lg overflow-hidden">
-                <img 
+                <Image
                   src={selectedPost.imageUrl} 
                   alt={selectedPost.title}
                   className="w-full h-auto" 

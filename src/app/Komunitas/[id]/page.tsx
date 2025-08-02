@@ -1,8 +1,9 @@
 "use client"
 import { useState, useEffect, useRef, use } from 'react';
-import { ArrowLeft, Image, Send, Paperclip, Smile, User } from 'lucide-react';
+import { ArrowLeft, Send, Paperclip } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 interface Message {
   id: number;
@@ -210,7 +211,7 @@ export default function DiskusiDetail({ params }: { params: Promise<{ id: string
 
             <div className="flex -space-x-2">
               {diskusi.participants.slice(0, 3).map((participant, index) => (
-                <img 
+                <Image
                   key={index}
                   src={participant.avatar} 
                   alt={participant.name}
@@ -246,7 +247,7 @@ export default function DiskusiDetail({ params }: { params: Promise<{ id: string
                 <div className={`flex max-w-[80%] ${message.isMine ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!message.isMine && (
                     <div className="flex-shrink-0 mr-2">
-                      <img src={message.avatar} alt={message.user} className="w-10 h-10 rounded-full" />
+                      <Image src={message.avatar} alt={message.user} className="w-10 h-10 rounded-full" />
                     </div>
                   )}
                   
@@ -264,7 +265,7 @@ export default function DiskusiDetail({ params }: { params: Promise<{ id: string
                     
                     {message.image && (
                       <div className="mt-2 rounded-lg overflow-hidden">
-                        <img 
+                        <Image
                           src={message.image} 
                           alt="Pesan gambar" 
                           className="max-w-full h-auto"
@@ -289,7 +290,7 @@ export default function DiskusiDetail({ params }: { params: Promise<{ id: string
         <div className="bg-white border-t border-gray-200 p-4">
           <div className="container mx-auto max-w-3xl">
             <div className="relative inline-block">
-              <img 
+              <Image
                 src={imagePreview} 
                 alt="Preview" 
                 className="h-32 object-contain rounded-lg"

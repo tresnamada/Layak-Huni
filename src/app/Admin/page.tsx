@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { isAdmin } from '@/services/adminService';
 import { collection, query, getDocs, where } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
 import {
   Menu,
   Users,

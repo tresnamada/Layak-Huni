@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiCamera } from 'react-icons/fi';
-import { auth } from '@/firebase';
+import { FiCamera } from 'react-icons/fi';
+import { auth } from '@/lib/firebase';
 import { createProfile } from '@/services/profileService';
 import { onAuthStateChanged } from 'firebase/auth';
+import Image from 'next/image'; 
 
 interface ProfileData {
   firstName: string;
@@ -93,6 +94,7 @@ export default function CompleteProfilePage() {
         setError(error || 'Failed to create profile');
       }
     } catch (err) {
+      console.error('Profile creation error:', err);
       setError('An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
@@ -131,7 +133,7 @@ export default function CompleteProfilePage() {
             <div className="flex flex-col items-center">
               <div className="relative h-28 w-28 rounded-full border-4 border-white shadow-md overflow-hidden mb-2">
                 {previewImage ? (
-                  <img 
+                  <Image
                     src={previewImage}
                     alt="Profile preview"
                     className="w-full h-full object-cover"

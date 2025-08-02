@@ -1,3 +1,33 @@
+// Define types for Midtrans Snap
+interface SnapResult {
+  status_code: string;
+  status_message: string;
+  transaction_id: string;
+  order_id: string;
+  gross_amount: string;
+  payment_type: string;
+  transaction_time: string;
+  transaction_status: string;
+  fraud_status: string;
+  pdf_url?: string;
+  finish_redirect_url?: string;
+}
+
+interface Snap {
+  pay(token: string, options?: {
+    onSuccess?(result: SnapResult): void;
+    onPending?(result: SnapResult): void;
+    onError?(result: SnapResult): void;
+    onClose?(): void;
+  }): void;
+}
+
+declare global {
+  interface Window {
+    snap: Snap;
+  }
+}
+
 interface PaymentDetails {
   orderId: string;
   amount: number;
@@ -26,21 +56,21 @@ export const initializeMidtransPayment = async (paymentDetails: PaymentDetails) 
     }
 
     // Load Midtrans Snap library
-    const snap = (window as any).snap;
+    const snap = window.snap;
     
     // Open Midtrans Snap payment page
     snap.pay(data.token, {
-      onSuccess: function(result: any) {
+      onSuccess: function(result: SnapResult) {
         console.log('Payment success:', result);
         // Only redirect on success
         window.location.href = '/Profile?tab=purchases';
       },
-      onPending: function(result: any) {
+      onPending: function(result: SnapResult) {
         console.log('Payment pending:', result);
         // Show pending message to user
         alert('Pembayaran sedang diproses. Silakan selesaikan pembayaran Anda.');
       },
-      onError: function(result: any) {
+      onError: function(result: SnapResult) {
         console.error('Payment error:', result);
         // Show error message to user
         alert('Terjadi kesalahan saat pembayaran. Silakan coba lagi.');

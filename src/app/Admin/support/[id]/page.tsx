@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getSupportThread, SupportThread } from '@/services/supportService';
 import { isAdmin } from '@/services/adminService';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
 import Navbar from '@/components/Navbar';
 import { 
   AlertCircle,

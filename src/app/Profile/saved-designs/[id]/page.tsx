@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getGeneratedDesign, GeneratedDesign } from '@/services/designService';
 import { createConsultation } from '@/services/consultationService';
@@ -8,27 +8,32 @@ import { useRouter } from 'next/navigation';
 import { FiArrowLeft, FiLoader, FiHome, FiDollarSign, FiFeather, FiCheck, FiLayers, FiMessageSquare } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
 
-export default function DesignDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+// Define the correct interface for Next.js 15 async params
+interface PageProps {
+  params: Promise<{ id: string }>
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default function DesignDetailPage({ params }: PageProps) {
   const { user, loading: authLoading } = useAuth({ redirectToLogin: true });
   const router = useRouter();
-  const designId = resolvedParams.id;
   
+  // State for design ID
+  const [designId, setDesignId] = useState<string | null>(null);
   const [design, setDesign] = useState<GeneratedDesign | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [consultLoading, setConsultLoading] = useState(false);
   const [consultError, setConsultError] = useState<string | null>(null);
 
+  // Resolve params on mount
   useEffect(() => {
-    if (authLoading) return;
-    
-    if (user && designId) {
-      fetchDesignDetails();
-    }
-  }, [user, authLoading, designId]);
+    params.then((resolvedParams) => {
+      setDesignId(resolvedParams.id);
+    });
+  }, [params]);
 
-  const fetchDesignDetails = async () => {
+  const fetchDesignDetails = useCallback(async () => {
     if (!user || !designId) return;
     
     setLoading(true);
@@ -48,10 +53,18 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, designId]);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (user && designId) {
+      fetchDesignDetails();
+    }
+  }, [user, authLoading, designId, fetchDesignDetails]);
 
   const handleConsultArchitect = async () => {
-    if (!user || !design) return;
+    if (!user || !design || !designId) return;
     
     setConsultLoading(true);
     setConsultError(null);
@@ -60,7 +73,6 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
       const result = await createConsultation(user.uid, designId, design);
       
       if (result.success) {
-        // Redirect to the consultation chat page
         router.push(`/Profile/consultations/${result.consultationId}`);
       } else {
         setConsultError(result.error || 'Gagal membuat permintaan konsultasi');
@@ -83,6 +95,20 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
       minute: '2-digit'
     });
   };
+
+  // Don't render anything until we have the design ID
+  if (!designId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <FiLoader className="animate-spin text-blue-600 w-10 h-10" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,4 +267,4 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
       </div>
     </div>
   );
-} 
+}

@@ -1,11 +1,37 @@
+import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { createSupportThread } from '../../services/supportService';
 import { useRouter } from 'next/navigation';
+import { PrebuiltDesign } from '@/types/prebuilt-design';
 
-const PrebuiltDesignDetail = ({ design }) => {
-  const { user, userData } = useAuth();
+const PrebuiltDesignDetail = ({ design }: {design: PrebuiltDesign}) => {
+  const { user } = useAuth();
   const router = useRouter();
-  // ... existing state and handlers ...
+  
+  // State variables
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Purchase handler (placeholder)
+  const handlePurchase = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // TODO: Implement purchase logic
+      console.log('Purchase logic to be implemented');
+    } catch (err) {
+      console.error('Purchase error:', err);
+      setError('Failed to process purchase');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleContactSupport = async () => {
     if (!user) {
@@ -15,9 +41,10 @@ const PrebuiltDesignDetail = ({ design }) => {
     
     try {
       setLoading(true);
+      setError(null);
       const { success, threadId, error } = await createSupportThread(
         user.uid,
-        userData?.displayName || user.email?.split('@')[0] || 'Anonymous User',
+        user.email?.split('@')[0] || 'Anonymous User',
         user.email || '',
         `Support Request: ${design.title}`,
         `I have a question about the prebuilt design "${design.title}"`,
@@ -36,8 +63,6 @@ const PrebuiltDesignDetail = ({ design }) => {
       setLoading(false);
     }
   };
-  
-  // ... existing render code ...
   
   return (
     <div className="container mx-auto px-4 py-8">

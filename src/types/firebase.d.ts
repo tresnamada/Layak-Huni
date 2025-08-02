@@ -5,7 +5,7 @@ import { FirebaseStorage } from 'firebase/storage';
 
 declare global {
   interface Window {
-    fbApp?: any;
+    fbApp?: FirebaseApp;
   }
 }
 

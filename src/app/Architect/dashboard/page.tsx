@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getArchitectConsultations, updateConsultationStatus, Consultation, ConsultationStatus } from '@/services/consultationService';
 import { getUserData, setArchitectAvailability } from '@/services/userService';
@@ -20,16 +20,7 @@ export default function ArchitectDashboard() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [updatingAvailability, setUpdatingAvailability] = useState(false);
 
-  // Check if the user is an architect
-  useEffect(() => {
-    if (authLoading) return;
-    
-    if (user) {
-      checkArchitectRole();
-    }
-  }, [user, authLoading]);
-
-  const checkArchitectRole = async () => {
+  const checkArchitectRole = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -47,7 +38,28 @@ export default function ArchitectDashboard() {
         setIsAvailable(result.userData.isAvailable || false);
         
         // Fetch consultations
-        fetchConsultations();
+        const fetchData = async () => {
+          if (!user) return;
+      
+          setLoading(true);
+          setError(null);
+      
+          try {
+            const result = await getArchitectConsultations(user.uid);
+      
+            if (result.success) {
+              setConsultations(result.consultations);
+            } else {
+              setError(result.error || 'Gagal mengambil data konsultasi');
+            }
+          } catch (err) {
+            console.error('Error fetching consultations:', err);
+            setError('Terjadi kesalahan saat mengambil data konsultasi');
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchData();
       } else {
         setError('Gagal memuat data pengguna');
       }
@@ -55,29 +67,43 @@ export default function ArchitectDashboard() {
       console.error('Error checking architect role:', err);
       setError('Terjadi kesalahan saat memeriksa peran pengguna');
     }
-  };
+  }, [user, router]);
 
-  const fetchConsultations = async () => {
-    if (!user) return;
+  // Check if the user is an architect
+  useEffect(() => {
+    if (authLoading) return;
     
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await getArchitectConsultations(user.uid);
-      
-      if (result.success) {
-        setConsultations(result.consultations);
-      } else {
-        setError(result.error || 'Gagal mengambil data konsultasi');
-      }
-    } catch (err) {
-      console.error('Error fetching consultations:', err);
-      setError('Terjadi kesalahan saat mengambil data konsultasi');
-    } finally {
-      setLoading(false);
+    if (user) {
+      checkArchitectRole();
     }
-  };
+  }, [user, authLoading, checkArchitectRole]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+  
+      setLoading(true);
+      setError(null);
+  
+      try {
+        const result = await getArchitectConsultations(user.uid);
+  
+        if (result.success) {
+          setConsultations(result.consultations);
+        } else {
+          setError(result.error || 'Gagal mengambil data konsultasi');
+        }
+      } catch (err) {
+        console.error('Error fetching consultations:', err);
+        setError('Terjadi kesalahan saat mengambil data konsultasi');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchData();
+  }, [user]);
+  
 
   const toggleAvailability = async () => {
     if (!user) return;

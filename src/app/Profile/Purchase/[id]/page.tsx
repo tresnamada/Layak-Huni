@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { doc, getDoc, Timestamp, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
 import Navbar from '@/components/Navbar';
 import Image from 'next/image';
 import {

@@ -8,7 +8,7 @@ import { getAuth } from 'firebase/auth';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { isProfileComplete } from '@/services/profileService';
 import { useRouter, usePathname } from 'next/navigation';
-import { app } from '@/firebase';
+import { app } from '@/lib/firebase';
 import { useAdmin } from '@/hooks/useAdmin';
 import { useArchitect } from '@/hooks/useArchitect';
 

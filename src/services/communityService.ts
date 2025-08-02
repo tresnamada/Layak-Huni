@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { 
   collection, 
   addDoc, 
@@ -262,7 +262,7 @@ export const getComments = async (postId: string): Promise<Comment[]> => {
  */
 export const togglePostLike = async (postId: string, userId: string): Promise<void> => {
   try {
-    const likesCollection = collection(db, 'postLikes');
+
     const likeId = `${postId}_${userId}`;
     const likeRef = doc(db, 'postLikes', likeId);
     const postRef = doc(db, 'communityPosts', postId);

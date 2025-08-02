@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { collection, doc, addDoc, getDoc, getDocs, updateDoc, query, where, orderBy } from 'firebase/firestore';
 import { GeneratedDesign } from './designService';
 import { getAvailableArchitects } from './userService';

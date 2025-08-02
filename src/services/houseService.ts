@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, getDoc, updateDoc, serverTimestamp, query, orderBy, Timestamp } from 'firebase/firestore';
 
 export interface Material {

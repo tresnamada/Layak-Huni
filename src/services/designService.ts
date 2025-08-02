@@ -1,5 +1,5 @@
-import { db } from '../firebase';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc, addDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { collection, doc, getDoc, getDocs, deleteDoc, addDoc } from 'firebase/firestore';
 
 export interface GeneratedDesign {
   id?: string;

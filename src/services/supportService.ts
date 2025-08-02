@@ -1,4 +1,4 @@
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 import { 
   collection, 
   addDoc, 
@@ -8,9 +8,10 @@ import {
   query, 
   where, 
   orderBy, 
-  onSnapshot,
   serverTimestamp,
-  Timestamp 
+  Timestamp,
+  FieldValue,
+  updateDoc
 } from 'firebase/firestore';
 
 export interface SupportThread {
@@ -207,9 +208,7 @@ export const updateSupportThreadStatus = async (
   adminName?: string
 ) => {
   try {
-    const threadRef = doc(db, 'supportThreads', threadId);
-    
-    const updateData: Record<string, any> = {
+    const updateData: { status: string; updatedAt: FieldValue; adminId?: string; adminName?: string } = {
       status,
       updatedAt: serverTimestamp()
     };
@@ -226,6 +225,8 @@ export const updateSupportThreadStatus = async (
       updatedByName: adminName || 'System',
       timestamp: serverTimestamp()
     });
+    
+    await updateDoc(doc(db, 'supportThreads', threadId), updateData);
     
     return { success: true };
   } catch (error) {
@@ -246,7 +247,8 @@ export const updateSupportThreadPriority = async (
 ) => {
   try {
     const threadRef = doc(db, 'supportThreads', threadId);
-    
+    await updateDoc(threadRef, { priority });
+
     await addDoc(collection(db, 'supportThreads', threadId, 'statusHistory'), {
       priority,
       updatedBy: 'admin', // This would typically be the admin's ID
@@ -269,7 +271,11 @@ export const updateSupportThreadPriority = async (
 export const closeSupportThread = async (threadId: string, closedBy: string, closedByName: string) => {
   try {
     const threadRef = doc(db, 'supportThreads', threadId);
-    
+    await updateDoc(threadRef, {
+      status: 'closed',
+      updatedAt: serverTimestamp()
+    });
+
     await addDoc(collection(db, 'supportThreads', threadId, 'statusHistory'), {
       status: 'closed',
       updatedBy: closedBy,

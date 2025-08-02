@@ -1,5 +1,5 @@
 "use client";
-
+import Image from 'next/image';
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -161,7 +161,7 @@ const BlueprintUploader: React.FC<BlueprintUploaderProps> = ({ onBlueprintChange
       </button>
       {previewUrl && (
         <div className="mt-4">
-          <img
+          <Image
             src={previewUrl}
             alt="Blueprint preview"
             className="max-w-full h-auto rounded-lg"
@@ -885,7 +885,7 @@ export default function EditHousePage({ params }: { params: Promise<{ id: string
                         <div className="absolute top-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-2 py-1 truncate z-10">
                           {blueprint.name || 'Untitled Blueprint'}
                         </div>
-                        <img
+                        <Image
                           src={blueprint.url}
                           alt={blueprint.description || 'Blueprint'}
                           className="w-full h-full object-contain"

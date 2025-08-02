@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import { app } from '@/firebase';
+import { app } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
 const auth = getAuth(app);

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Upload } from 'lucide-react';
+import Image from 'next/image';
 
 interface ImageUploaderProps {
   onImageChange: (image: string | null) => void;
@@ -80,7 +81,7 @@ export default function ImageUploader({ onImageChange, initialImage = null }: Im
 
       {previewUrl && (
         <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
-          <img
+          <Image
             src={previewUrl}
             alt="House preview"
             className="w-full h-full object-contain"

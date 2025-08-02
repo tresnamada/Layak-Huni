@@ -19,34 +19,34 @@ export default function SavedDesignsPage() {
 
   // Load saved designs when user auth state is ready
   useEffect(() => {
+    const fetchDesigns = async () => {
+      if (!user) return
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        const result = await getUserGeneratedDesigns(user.uid)
+
+        if (result.success) {
+          setDesigns(result.designs)
+        } else {
+          setError(result.error || "Gagal mengambil data desain")
+        }
+      } catch (err) {
+        console.error("Error fetching designs:", err)
+        setError("Terjadi kesalahan saat mengambil data desain")
+      } finally {
+        setLoading(false)
+      }
+    }
+
     if (authLoading) return
 
     if (user) {
       fetchDesigns()
     }
   }, [user, authLoading])
-
-  const fetchDesigns = async () => {
-    if (!user) return
-
-    setLoading(true)
-    setError(null)
-
-    try {
-      const result = await getUserGeneratedDesigns(user.uid)
-
-      if (result.success) {
-        setDesigns(result.designs)
-      } else {
-        setError(result.error || "Gagal mengambil data desain")
-      }
-    } catch (err) {
-      console.error("Error fetching designs:", err)
-      setError("Terjadi kesalahan saat mengambil data desain")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDelete = async (designId: string) => {
     if (!user || !designId) return

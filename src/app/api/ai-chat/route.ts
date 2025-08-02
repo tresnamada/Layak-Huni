@@ -1,15 +1,9 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { collection, getDocs, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase';
-import { auth } from '@/firebase';
+import { collection, getDocs, DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
-// Define types for chat messages and house data
-interface ChatMessage {
-  isUser: boolean;
-  content: string;
-}
-
+// Define types for house data
 interface HouseData {
   id: string;
   name: string;
@@ -20,9 +14,9 @@ interface HouseData {
   tipe: string;
   description: string;
   imageUrl: string;
-  createdAt?: any;
+  createdAt?: Timestamp;
   createdBy?: string;
-  [key: string]: string | number | string[] | any;
+  [key: string]: string | number | string[] | DocumentData | DocumentData[] | Timestamp | undefined;
 }
 
 // Available Gemini models to try
@@ -103,7 +97,7 @@ async function retryWithBackoff<T>(
   throw lastError || new Error('Retry failed for unknown reason');
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const { userMessage, answers, stage, type, userId } = await request.json();
     
@@ -513,10 +507,10 @@ Jawab dengan format teks biasa, tanpa JSON atau format khusus.
 
       try {
         response = await retryWithBackoff(() => chat.sendMessage(chatPrompt));
-      const aiResponse = response.response.text();
-      
-      return NextResponse.json({ 
-        response: aiResponse,
+        const aiResponse = response.response.text();
+        
+        return NextResponse.json({ 
+          response: aiResponse,
           success: true
         });
       } catch (error) {
@@ -563,7 +557,7 @@ async function initializeWorkingModel(houses: HouseData[]): Promise<GenerativeMo
       });
       
       // Test the model with a simple prompt
-      const testResult = await model.generateContent("Respond with OK if you can read this");
+      await model.generateContent("Respond with OK if you can read this");
       console.log(`Model ${modelVersion} initialized successfully`);
       return model;
     } catch (modelError) {

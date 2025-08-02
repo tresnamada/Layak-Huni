@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { isAdmin } from '@/services/adminService';
-import { app } from '@/firebase';
+import { app } from '@/lib/firebase';
 
 const auth = getAuth(app);
 

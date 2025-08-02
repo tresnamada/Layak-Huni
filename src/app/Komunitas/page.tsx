@@ -9,7 +9,8 @@ import { useAuth } from '@/context/AuthContext';
 import { CommunityPost, convertImageToBase64 } from '@/services/communityService';
 import { getProfile } from '@/services/profileService';
 import { doc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp, deleteDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
+import Image from 'next/image';
 
 interface Comment {
   id: string;
@@ -572,7 +573,7 @@ export default function KomunitasDesainInterior() {
                     )}
                     {imagePreview && (
                       <div className="mt-2 relative">
-                        <img
+                        <Image
                           src={imagePreview}
                           alt="Preview"
                           className="max-h-48 rounded-lg object-cover"
@@ -649,7 +650,7 @@ export default function KomunitasDesainInterior() {
                     
                     {post.imageUrl && (
                       <div className="mb-4 rounded-lg overflow-hidden">
-                        <img src={post.imageUrl} alt={post.title} className="w-full h-auto" />
+                        <Image src={post.imageUrl} alt={post.title} className="w-full h-auto" />
                       </div>
                     )}
                     
@@ -693,7 +694,9 @@ export default function KomunitasDesainInterior() {
                           }`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleSavePost(post.id);
+                            if (post.id) {
+                              toggleSavePost(post.id);
+                            }
                           }}
                         >
                           <Bookmark size={16} fill={savedPosts.includes(post.id) ? 'currentColor' : 'none'} />

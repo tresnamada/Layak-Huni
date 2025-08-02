@@ -27,6 +27,7 @@ const LoginPage = () => {
         router.push('/');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Terjadi kesalahan yang tidak terduga');
     } finally {
       setLoading(false);
@@ -45,6 +46,7 @@ const LoginPage = () => {
         router.push('/');
       }
     } catch (err) {
+      console.error('Google login error:', err);
       setError('Terjadi kesalahan yang tidak terduga');
     } finally {
       setLoading(false);

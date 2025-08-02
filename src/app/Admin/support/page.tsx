@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getAllOpenSupportThreads, SupportThread } from '@/services/supportService';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/lib/firebase';
 import { 
   MessageSquare,
   Loader2,

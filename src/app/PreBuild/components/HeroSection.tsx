@@ -50,16 +50,6 @@ export default function HeroSection({
     },
   }
 
-  const fadeInVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        duration: 0.8,
-        ease: "easeOut",
-      },
-    },
-  }
 
   const slideInVariants = {
     hidden: { x: -60, opacity: 0 },

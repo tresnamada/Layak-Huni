@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Upload } from 'lucide-react';
 import { Blueprint } from '@/services/houseService';
+import Image from 'next/image';
 
 interface BlueprintUploaderProps {
   onBlueprintChange: (blueprint: Blueprint) => void;
@@ -60,7 +61,9 @@ export default function BlueprintUploader({ onBlueprintChange }: BlueprintUpload
     if (previewUrl && description) {
       onBlueprintChange({
         url: previewUrl,
-        description
+        description,
+        type: 'section',
+        imageUrl: ''
       });
       setPreviewUrl(null);
       setDescription('');
@@ -109,7 +112,7 @@ export default function BlueprintUploader({ onBlueprintChange }: BlueprintUpload
       {previewUrl && (
         <div className="space-y-4">
           <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
-            <img
+            <Image
               src={previewUrl}
               alt="Blueprint preview"
               className="w-full h-full object-contain"

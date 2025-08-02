@@ -9,7 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth } from '../lib/firebase';
 import { setUserRole } from './userService';
 
 const typedAuth: Auth = auth;

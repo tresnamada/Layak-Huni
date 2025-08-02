@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, Search, ChevronUp, AlertCircle, SlidersHorizontal } from 'lucide-react';
+import { Search, ChevronUp, AlertCircle, SlidersHorizontal } from 'lucide-react';
 import { getAllHouses, HouseData } from '@/services/houseService';
 import Navbar from '@/components/Navbar';
 import HeroSection from './components/HeroSection';

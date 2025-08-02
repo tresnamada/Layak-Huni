@@ -117,10 +117,15 @@ export const CommunityProvider: React.FC<CommunityProviderProps> = ({ children }
   }, [fetchPost, fetchPosts, selectedPost]);
 
   const deleteExistingPost = useCallback(async (postId: string) => {
+    if (!user) {
+      setError('User not authenticated');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
-      await communityService.deletePost(postId);
+      await communityService.deletePost(postId, user.uid);
       if (selectedPost?.id === postId) {
         setSelectedPost(null);
       }
@@ -131,7 +136,7 @@ export const CommunityProvider: React.FC<CommunityProviderProps> = ({ children }
     } finally {
       setLoading(false);
     }
-  }, [fetchPosts, selectedPost]);
+  }, [fetchPosts, selectedPost, user]);
 
   const fetchComments = useCallback(async (postId: string) => {
     setLoading(true);
