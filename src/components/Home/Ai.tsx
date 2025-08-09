@@ -1,6 +1,6 @@
 // components/SiHuniHomeDesign.jsx
 import { useState, useEffect, useRef } from 'react';
-import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 export default function SiHuniHomeDesign() {
   const containerRef = useRef(null);
@@ -9,7 +9,7 @@ export default function SiHuniHomeDesign() {
   const [typedText, setTypedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
-  const [showFeatures, setShowFeatures] = useState(false);
+  const [ , setShowFeatures] = useState(false);
   
   const fullText = "Bingung mau design rumah seperti apa? Biarkan aku, SiHuni, membantumu! Cukup tanyakan gaya dan kebutuhan rumah impianmu, dan aku akan mencarikan inspirasi terbaik untukmu.";
   
@@ -52,12 +52,7 @@ export default function SiHuniHomeDesign() {
     },
   ];
 
-  const features = [
-    { icon: '🎨', title: 'Desain Kustom', desc: 'Sesuaikan dengan kebutuhan' },
-    { icon: '💡', title: 'AI Powered', desc: 'Rekomendasi cerdas' },
-    { icon: '🏗️', title: 'Detail Lengkap', desc: 'Spesifikasi terperinci' },
-    { icon: '💰', title: 'Estimasi Biaya', desc: 'Perhitungan akurat' },
-  ];
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -192,7 +187,7 @@ export default function SiHuniHomeDesign() {
               
               {/* Enhanced Decorative Elements */}
               <motion.div
-                className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white rotate-45 shadow-lg"
+                className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white rotate-45 shadow-lg hidden "
                 animate={{
                   scale: [1, 1.1, 1],
                   rotate: [45, 45, 45]
@@ -201,44 +196,18 @@ export default function SiHuniHomeDesign() {
               />
             </motion.div>
 
-            {/* Feature Cards */}
-            <AnimatePresence>
-              {showFeatures && (
-                <motion.div
-                  className="grid grid-cols-2 gap-4 mt-8"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  {features.map((feature, index) => (
-                    <motion.div
-                      key={feature.title}
-                      className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-lg"
-                      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.9)' }}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <span className="text-2xl mb-2 block">{feature.icon}</span>
-                      <h4 className="font-medium text-[#594C1A]">{feature.title}</h4>
-                      <p className="text-sm text-[#594C1A]/70">{feature.desc}</p>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
 
           {/* Right Column - Enhanced Style Selection */}
           <motion.div 
-            className="space-y-6"
+            className="space-y-6 "
             variants={itemVariants}
           >
-            <h3 className="text-2xl font-semibold text-[#594C1A] mb-8">
+            <h3 className="text-2xl font-semibold text-[#594C1A] mb-8 hidden lg:grid">
               Pilih Gaya Rumah Impianmu
             </h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-4">
               {styles.map((style) => (
                 <motion.button
                   key={style.id}
@@ -295,6 +264,7 @@ export default function SiHuniHomeDesign() {
                 whileHover={{ x: "100%" }}
                 transition={{ duration: 0.8 }}
               />
+      
               <span className="relative z-10 flex items-center justify-center gap-2">
                 <Link href="/sihuni">
                 Mulai Konsultasi

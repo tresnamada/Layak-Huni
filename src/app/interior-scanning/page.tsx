@@ -2,9 +2,10 @@
 
 import { useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Upload, Camera, Sparkles, Zap, Home, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, Camera, Home, CheckCircle, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Image from 'next/image';
+
 type AnalysisResult = {
   analysis: {
     room_type: string;
@@ -31,6 +32,7 @@ export default function InteriorScanningPage() {
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
+  // Event handlers remain the same as your original code
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -107,15 +109,35 @@ export default function InteriorScanningPage() {
     }
   };
 
+  // Animation variants
   const fadeInUp = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0 }
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }
+    }
+  };
+
+  const scaleIn = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.6,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }
+    }
   };
 
   const stagger = {
     visible: {
       transition: {
-        staggerChildren: 0.15
+        staggerChildren: 0.2
       }
     }
   };
@@ -123,340 +145,322 @@ export default function InteriorScanningPage() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-[#F6F6EC] text-[#4A443A] p-4 sm:p-8" // Softer text color
-      style={{
-        background: "linear-gradient(145deg, #F6F6EC 0%, #E8E8DE 100%)"
-      }}
+      className="min-h-screen bg-gradient-to-br from-[#F6F6EC] to-[#E8E8DE] text-[#4A443A] relative overflow-hidden"
     >
+      {/* Decorative Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#594C1A]/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 -left-20 w-60 h-60 bg-[#594C1A]/3 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-20 right-1/4 w-40 h-40 bg-[#594C1A]/4 rounded-full blur-xl"></div>
+      </div>
       <Navbar />
+      {/* AI Avatar with Animation */}
       <motion.div
-        className="max-w-6xl mx-auto mt-20"
-        initial="hidden"
-        animate={isInView ? "visible" : "hidden"}
-        variants={stagger}
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 2, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-center pt-24"
       >
-        {/* Header Section */}
-        <motion.div
-          className="text-center mb-12"
-          variants={fadeInUp}
-          transition={{ duration: 0.8 }}
-        >
-              <div className="relative">
-                <div className="w-100 h-100 flex items-center justify-center animate-pulse-slow overflow-hidden">
-                  <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="object-contain w-64 h-64"
-                  >
-                    <source src="/animation.mp4" type="video/mp4" />
-                  </video>
-                </div>
-              </div>
-          <motion.div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-[#594C1A]/10 rounded-2xl">
-              <Sparkles className="w-8 h-8 text-[#594C1A]" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-[#594C1A]">Analisis Interior SiHuni</h1>
-          </motion.div>
-          <p className="text-lg text-[#594C1A]/70 max-w-2xl mx-auto leading-relaxed">
-            Transformasi ruangan Anda dengan teknologi AI terdepan. Unggah foto, tentukan anggaran,
-            dan dapatkan rekomendasi interior yang dipersonalisasi.
-          </p>
-        </motion.div>
-
-        {/* Main Content */}
-        <motion.div
-          className="bg-white/90 backdrop-blur-sm p-8 md:p-12 rounded-3xl shadow-xl mb-8 border border-white/50" // Slightly more opaque white, softer shadow, more prominent border
-          variants={fadeInUp}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          style={{
-            boxShadow: "0 20px 40px -10px rgba(139, 69, 19, 0.1)" // Softer, more diffused shadow
-          }}
-        >
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* Upload Section */}
-            <motion.div
-              className="space-y-6"
-              variants={fadeInUp}
-              transition={{ duration: 0.6, delay: 0.3 }}
+        <div className="relative">
+          <div className="w-100 h-100 flex items-center justify-center animate-pulse-slow overflow-hidden">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="object-contain w-32 h-32"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-[#594C1A]/10 rounded-xl">
-                  <Camera className="w-6 h-6 text-[#594C1A]" />
-                </div>
-                <h2 className="text-2xl font-bold text-[#594C1A]">Upload Foto Ruangan</h2>
-              </div>
-
-              <div
-                className={`relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 ${
-                  dragActive
-                    ? 'border-[#594C1A] bg-[#594C1A]/5 scale-[1.02]' // Subtle scale on drag
-                    : 'border-[#594C1A]/20 hover:border-[#594C1A]/40 hover:bg-[#594C1A]/5'
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-
-                {!previewUrl ? (
-                  <div className="text-center">
-                    <motion.div
-                      className="mx-auto w-16 h-16 bg-[#594C1A]/10 rounded-2xl flex items-center justify-center mb-4"
-                      whileHover={{ scale: 1.05 }} // Slightly less aggressive hover
-                      transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                    >
-                      <Upload className="w-8 h-8 text-[#594C1A]" />
-                    </motion.div>
-                    <h3 className="text-lg font-semibold text-[#594C1A] mb-2">
-                      Drag & Drop atau Klik untuk Upload
-                    </h3>
-                    <p className="text-[#594C1A]/60 text-sm">
-                      Mendukung format JPG, PNG, WebP (Max 10MB)
-                    </p>
-                  </div>
-                ) : (
-                  <motion.div
-                    className="relative"
-                    initial={{ opacity: 0, scale: 0.95 }} // Slightly smaller initial scale
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <Image
-                      src={previewUrl || "/placeholder.svg"}
-                      alt="Pratinjau Ruangan"
-                      className="w-full h-64 object-cover rounded-xl shadow-md" // Softer shadow
-                    />
-                    <motion.div
-                      className="absolute top-3 right-3 p-2 bg-white/90 rounded-full shadow-lg"
-                      whileHover={{ scale: 1.05 }} // Slightly less aggressive hover
-                    >
-                      <CheckCircle className="w-5 h-5 text-green-600" />
-                    </motion.div>
-                  </motion.div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Budget Section */}
-            <motion.div
-              className="space-y-6"
-              variants={fadeInUp}
-              transition={{ duration: 0.6, delay: 0.4 }}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-[#594C1A]/10 rounded-xl">
-                  <TrendingUp className="w-6 h-6 text-[#594C1A]" />
-                </div>
-                <h2 className="text-2xl font-bold text-[#594C1A]">Tentukan Anggaran</h2>
-              </div>
-
-              <div className="space-y-4">
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#594C1A] font-semibold">
-                    Rp
-                  </span>
-                  <input
-                    id="budget"
-                    type="number"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    placeholder="5.000.000"
-                    className="w-full pl-12 pr-4 py-4 border-2 border-[#594C1A]/20 rounded-2xl focus:ring-4 focus:ring-[#594C1A]/10 focus:border-[#594C1A] transition-all duration-300 text-lg font-medium bg-white/70 backdrop-blur-sm" // Slightly more opaque input background
-                  />
-                </div>
-
-                {/* Quick Budget Options */}
-                <div className="grid grid-cols-2 gap-3">
-                  {[2000000, 5000000, 10000000, 20000000].map((amount) => (
-                    <motion.button
-                      key={amount}
-                      onClick={() => setBudget(amount.toString())}
-                      className={`p-3 rounded-xl border-2 transition-all duration-300 text-sm font-medium ${
-                        budget === amount.toString()
-                          ? 'border-[#594C1A] bg-[#594C1A]/10 text-[#594C1A]'
-                          : 'border-[#594C1A]/20 hover:border-[#594C1A]/40 text-[#594C1A]/70 hover:bg-[#594C1A]/5'
-                      }`}
-                      whileHover={{ scale: 1.01 }} // Subtle hover
-                      whileTap={{ scale: 0.99 }} // Subtle tap
-                    >
-                      Rp {(amount / 1000000)}M
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Analysis Button */}
-              <motion.button
-                onClick={analyzeRoom}
-                disabled={isLoading || !imageFile || !budget}
-                className="w-full bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] text-white font-bold py-4 px-6 rounded-2xl hover:from-[#6B5B1F] hover:to-[#594C1A] disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none" // Softer hover translate
-                whileHover={{ scale: isLoading || !imageFile || !budget ? 1 : 1.01 }} // Subtle hover
-                whileTap={{ scale: isLoading || !imageFile || !budget ? 1 : 0.99 }} // Subtle tap
-              >
-                {isLoading ? (
-                  <>
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="mr-3"
-                    >
-                      <Zap className="w-5 h-5" />
-                    </motion.div>
-                    Menganalisis Ruangan...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5 mr-3" />
-                    Analisis dengan AI
-                  </>
-                )}
-              </motion.button>
-            </motion.div>
+              <source src="/animation.mp4" type="video/mp4" />
+            </video>
           </div>
-        </motion.div>
-
-        {/* Error Display */}
-        {error && (
+        </div>
+      </motion.div>
+      <div className="relative z-10 px-4 sm:px-8 pt-32 pb-16">
+        <motion.div
+          className="max-w-7xl mx-auto"
+          initial="hidden"
+          animate={isInView ? "visible" : "hidden"}
+          variants={stagger}
+        >
+          {/* Hero Section */}
           <motion.div
-            className="mt-8 bg-red-100 border-l-4 border-red-300 text-red-800 p-6 rounded-2xl flex items-start gap-3" // Softer red tones
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            className="text-center mb-20"
+            variants={fadeInUp}
           >
-            <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-lg">Terjadi Kesalahan</p>
-              <p className="mt-1">{error}</p>
-            </div>
-          </motion.div>
-        )}
 
-        {/* Results Section */}
-        {analysisResult && (
-          <motion.div
-            className="bg-white/90 backdrop-blur-sm p-8 md:p-12 rounded-3xl shadow-xl border border-white/50" // Consistent styling with main content
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            style={{
-              boxShadow: "0 20px 40px -10px rgba(139, 69, 19, 0.1)" // Consistent softer shadow
-            }}
-          >
-            <motion.div
-              className="flex items-center gap-3 mb-8"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+            <motion.h1
+              className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] bg-clip-text text-transparent mb-6 tracking-tight"
+              variants={fadeInUp}
             >
-              <div className="p-3 bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] rounded-2xl">
-                <Sparkles className="w-8 h-8 text-white" />
+              Analisis Interior SiHuni
+            </motion.h1>
+
+            <motion.p
+              className="text-xl text-[#594C1A]/80 max-w-2xl mx-auto leading-relaxed"
+              variants={fadeInUp}
+            >
+              Transformasi ruangan Anda dengan teknologi AI terdepan. Unggah foto, tentukan anggaran, dan dapatkan rekomendasi yang dipersonalisasi.
+            </motion.p>
+          </motion.div>
+
+          {/* Upload and Budget Section */}
+          <motion.div
+            className="grid lg:grid-cols-3 gap-8 mb-16"
+            variants={fadeInUp}
+          >
+            {/* Upload Card */}
+            <motion.div
+              className="lg:col-span-2"
+              variants={scaleIn}
+              whileHover={{ y: -5 }}
+            >
+              <div className="relative bg-white/95 backdrop-blur-lg p-8 rounded-3xl border border-white/60 shadow-lg h-full">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-gradient-to-br from-[#594C1A] to-[#6B5B1F] rounded-2xl text-white">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-[#594C1A]">Upload Foto Ruangan</h2>
+                </div>
+
+                <div
+                  className={`relative border-2 border-dashed rounded-2xl transition-all ${dragActive ? 'border-[#594C1A] bg-[#594C1A]/5' : 'border-[#594C1A]/20 hover:border-[#594C1A]/40'
+                    }`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+
+                  {previewUrl ? (
+                    <div className="p-4">
+                      <div className="relative h-64 rounded-xl overflow-hidden">
+                        <Image
+                          src={previewUrl}
+                          alt="Preview"
+                          fill
+                          className="object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center p-12">
+                      <Upload className="w-12 h-12 mx-auto text-[#594C1A] mb-4" />
+                      <h3 className="text-xl font-medium text-[#594C1A] mb-2">
+                        Seret & Lepas Foto atau Klik untuk Memilih
+                      </h3>
+                      <p className="text-[#594C1A]/60">Format: JPG, PNG, WebP (maks. 10MB)</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <h2 className="text-3xl font-bold text-[#594C1A]">Hasil Analisis AI</h2>
             </motion.div>
 
-            <div className="space-y-8">
-              {/* Analysis Summary */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <motion.div
-                  className="p-6 bg-gradient-to-br from-[#594C1A]/5 to-[#594C1A]/10 rounded-2xl border border-[#594C1A]/20"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <Home className="w-6 h-6 text-[#594C1A]" />
-                    <h3 className="font-bold text-xl text-[#594C1A]">Analisis Ruangan</h3>
+            {/* Budget Card */}
+            <motion.div
+              variants={scaleIn}
+              whileHover={{ y: -5 }}
+            >
+              <div className="relative bg-white/95 backdrop-blur-lg p-8 rounded-3xl border border-white/60 shadow-lg h-full">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-gradient-to-br from-[#594C1A] to-[#6B5B1F] rounded-2xl text-white">
+
                   </div>
-                  <p className="text-[#594C1A]/80 leading-relaxed">{analysisResult.analysis.description}</p>
+                  <h2 className="text-2xl font-bold text-[#594C1A]">Tentukan Anggaran</h2>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#594C1A] font-medium">
+                      Rp
+                    </span>
+                    <input
+                      type="number"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      placeholder="Contoh: 5000000"
+                      className="w-full pl-12 pr-4 py-3 border border-[#594C1A]/20 rounded-xl focus:ring-2 focus:ring-[#594C1A]/30 focus:border-[#594C1A]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {[2000000, 5000000, 10000000, 20000000].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setBudget(amount.toString())}
+                        className={`py-2 rounded-lg text-sm font-medium ${budget === amount.toString()
+                            ? 'bg-[#594C1A] text-white'
+                            : 'bg-[#594C1A]/5 text-[#594C1A] hover:bg-[#594C1A]/10'
+                          }`}
+                      >
+                        {amount.toLocaleString('id-ID')}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={analyzeRoom}
+                    disabled={isLoading || !imageFile || !budget}
+                    className={`w-full py-3 px-6 rounded-xl font-medium text-white flex items-center justify-center gap-2 ${isLoading || !imageFile || !budget
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] hover:from-[#6B5B1F] hover:to-[#594C1A]'
+                      }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+
+                        </motion.span>
+                        Menganalisis...
+                      </>
+                    ) : (
+                      <>
+
+                        Analisis Sekarang
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Error Display */}
+          {error && (
+            <motion.div
+              className="mb-8 bg-red-50/90 backdrop-blur-sm border-l-4 border-red-400 p-6 rounded-xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-red-500 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-bold text-lg text-red-800 mb-1">Terjadi Kesalahan</h3>
+                  <p className="text-red-700">{error}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Results Section */}
+          {analysisResult && (
+            <motion.div
+              className="bg-white/95 backdrop-blur-lg rounded-3xl border border-white/60 shadow-xl p-8 md:p-12"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              {/* Results Header */}
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center gap-4 mb-6">
+                  <div className="p-4 bg-gradient-to-br from-[#594C1A] to-[#6B5B1F] rounded-2xl text-white">
+
+                  </div>
+                  <div className="h-px w-16 bg-gradient-to-r from-[#594C1A]/40 via-[#594C1A]/20 to-transparent"></div>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-[#594C1A] mb-4">
+                  Hasil Analisis AI
+                </h2>
+                <p className="text-[#594C1A]/70 max-w-2xl mx-auto">
+                  Berdasarkan analisis mendalam terhadap ruangan Anda
+                </p>
+              </div>
+
+              {/* Analysis Summary */}
+              <div className="grid md:grid-cols-2 gap-8 mb-12">
+                <motion.div
+                  className="bg-gradient-to-br from-[#594C1A]/5 to-[#594C1A]/10 rounded-2xl p-8 border border-[#594C1A]/20"
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                >
+                  <div className="flex items-center gap-4 mb-6">
+                    <Home className="w-8 h-8 text-[#594C1A]" />
+                    <h3 className="text-xl font-bold text-[#594C1A]">Analisis Ruangan</h3>
+                  </div>
+                  <p className="text-[#594C1A]/80 leading-relaxed">
+                    {analysisResult.analysis.description}
+                  </p>
                 </motion.div>
 
                 <motion.div
-                  className="p-6 bg-green-100 rounded-2xl border border-green-300" // Softer green tones
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-8 border border-green-200"
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                    <h3 className="font-bold text-xl text-green-800">Ringkasan Rekomendasi</h3>
+                  <div className="flex items-center gap-4 mb-6">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
+                    <h3 className="text-xl font-bold text-green-800">Ringkasan</h3>
                   </div>
-                  <p className="text-green-700 leading-relaxed">{analysisResult.summary}</p>
+                  <p className="text-green-700 leading-relaxed">
+                    {analysisResult.summary}
+                  </p>
                 </motion.div>
               </div>
 
-              {/* Recommendations Grid */}
-              <div>
-                <motion.h3
-                  className="text-2xl font-bold text-[#594C1A] mb-6 flex items-center gap-3"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.5 }}
-                >
-                  <TrendingUp className="w-7 h-7" />
-                  Rekomendasi Item Interior
-                </motion.h3>
+              {/* Recommendations */}
+              <div className="mb-12">
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl md:text-3xl font-bold text-[#594C1A] mb-4">
+                    Rekomendasi Interior
+                  </h3>
+                  <div className="w-16 h-1 bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] rounded-full mx-auto"></div>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {analysisResult.recommendations.map((item, index) => (
                     <motion.div
                       key={index}
-                      className="group bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300" // Softer shadows
+                      className="bg-white rounded-xl border border-[#594C1A]/10 overflow-hidden shadow-md hover:shadow-lg transition-shadow"
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
-                      whileHover={{
-                        y: -4, // Subtle lift on hover
-                        boxShadow: "0 15px 30px -8px rgba(139, 69, 19, 0.15)" // Softer hover shadow
-                      }}
+                      transition={{ delay: index * 0.1 }}
                     >
                       <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <h4 className="font-bold text-lg text-[#594C1A] group-hover:text-[#6B5B1F] transition-colors">
-                            {item.item_name}
-                          </h4>
-                          <div className="p-2 bg-[#594C1A]/10 rounded-xl group-hover:bg-[#594C1A]/20 transition-colors">
-                            <Home className="w-4 h-4 text-[#594C1A]" />
-                          </div>
-                        </div>
-
-                        <div className="mb-4">
-                          <span className="inline-block px-4 py-2 bg-gradient-to-r from-[#6B5B1F] to-[#8B7B3F] text-white font-bold rounded-xl text-sm shadow-md"> {/* Muted gold/brown gradient for price */}
+                        <div className="flex justify-between items-start mb-4">
+                          <h4 className="font-bold text-lg text-[#594C1A]">{item.item_name}</h4>
+                          <span className="bg-[#594C1A]/10 text-[#594C1A] px-3 py-1 rounded-full text-sm font-medium">
                             Rp {item.estimated_price.toLocaleString('id-ID')}
                           </span>
                         </div>
 
-                        <div className="space-y-3">
-                          <div className="p-4 bg-gray-50 rounded-xl">
-                            <p className="text-sm text-gray-700 leading-relaxed">{item.description}</p>
-                          </div>
+                        <p className="text-[#594C1A]/70 mb-4">{item.description}</p>
 
-                          <div className="p-4 bg-blue-100 rounded-xl border-l-4 border-blue-300"> {/* Softer blue tones */}
-                            <p className="text-sm text-blue-800">
-                              <span className="font-semibold">💡 Saran Penempatan:</span>
-                              <br />
-                              {item.placement_suggestion}
-                            </p>
-                          </div>
+                        <div className="bg-blue-50/50 border-l-4 border-blue-400 p-4 rounded-r">
+                          <p className="font-medium text-blue-800 mb-1">Saran Penempatan</p>
+                          <p className="text-blue-700 text-sm">{item.placement_suggestion}</p>
                         </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
+
+              {/* Call to Action */}
+              <div className="text-center">
+                <div className="inline-block bg-gradient-to-r from-[#594C1A]/5 to-[#6B5B1F]/5 rounded-2xl p-8 border border-[#594C1A]/20">
+                  <h4 className="text-xl font-bold text-[#594C1A] mb-2">
+                    Siap Mentransformasi Ruangan Anda?
+                  </h4>
+                  <p className="text-[#594C1A]/70 mb-6 max-w-md mx-auto">
+                    Implementasikan rekomendasi ini untuk menciptakan ruangan impian Anda
+                  </p>
+                  <button className="bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] text-white py-3 px-8 rounded-xl font-medium hover:from-[#6B5B1F] hover:to-[#594C1A] transition-all">
+                    Mulai Sekarang
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 }

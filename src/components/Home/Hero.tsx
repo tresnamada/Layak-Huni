@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import Navbar from "../Navbar";
 import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const HomePage = () => {
   const containerRef = useRef(null);
@@ -145,13 +146,22 @@ const HomePage = () => {
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                       >
-                        Lihat Proyek
+                        <Link href="/PreBuild">Lihat Proyek</Link>
                       </motion.button>
                       <motion.button 
                         className="bg-transparent border-2 border-white/80 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full text-white font-medium text-xs sm:text-sm hover:bg-white/10 focus:outline-none transition-all duration-300 w-full sm:w-auto backdrop-blur-sm"
                         variants={fadeInUp}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                          const marketSection = document.getElementById('market-section');
+                          if (marketSection) {
+                            marketSection.scrollIntoView({ 
+                              behavior: 'smooth',
+                              block: 'start'
+                            });
+                          }
+                        }}
                       >
                         Pelajari Lebih Lanjut
                       </motion.button>

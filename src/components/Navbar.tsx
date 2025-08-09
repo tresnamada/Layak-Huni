@@ -21,6 +21,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSiHuniDropdownOpen, setIsSiHuniDropdownOpen] = useState(false); // State for desktop Si Huni dropdown
   const [isSiHuniMobileDropdownOpen, setIsSiHuniMobileDropdownOpen] = useState(false); // State for mobile Si Huni dropdown
+  const [isScrolled, setIsScrolled] = useState(false); // State for scroll detection
 
   const router = useRouter();
   const pathname = usePathname();
@@ -38,6 +39,17 @@ export default function Navbar() {
       }
     });
     return () => unsubscribe();
+  }, []);
+
+  // Scroll effect for mobile navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      setIsScrolled(scrollTop > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Close mobile menu when route changes
@@ -277,7 +289,13 @@ export default function Navbar() {
         <motion.div
           initial={{ y: -100 }}
           animate={{ y: 0 }}
-          className={`${isMobileMenuOpen ? 'bg-white border-b border-white' : 'bg-transparent '}`}
+          className={`transition-all duration-300 ${
+            isMobileMenuOpen 
+              ? 'bg-white border-b border-white' 
+              : isScrolled 
+                ? 'bg-white/90 backdrop-blur-lg border-b border-white/20 shadow-sm' 
+                : 'bg-transparent'
+          }`}
         >
           <div className="flex items-center justify-between px-4 py-3">
             <Link href="/" className="font-bold text-xl text-amber-800">

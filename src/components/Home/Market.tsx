@@ -2,6 +2,7 @@
 import { motion, useInView } from 'framer-motion';
 import React, { useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const Market = () => {
   const containerRef = useRef(null);
@@ -14,11 +15,9 @@ const Market = () => {
 
   return (
     <div 
+      id="market-section"
       ref={containerRef}
       className="mt-28 min-h-screen p-4 sm:p-6 md:p-8 bg-[#F6F6EC]"
-      style={{
-        background: "linear-gradient(145deg, #F6F6EC 0%, #F6F6EC 100%)"
-      }}
     >
       <motion.div 
         className="flex flex-col mx-auto max-w-7xl md:flex-row items-center justify-between gap-8 md:gap-12"
@@ -158,7 +157,9 @@ const Market = () => {
               whileTap={{ scale: 0.95 }}
             >
               <span className="flex items-center justify-center gap-2">
+                <Link href="/market">
                 Lihat Katalog
+                </Link>
                 <motion.span
                   animate={{ x: [0, 5, 0] }}
                   transition={{ repeat: Infinity, duration: 1 }}

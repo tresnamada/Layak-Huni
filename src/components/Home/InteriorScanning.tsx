@@ -1,259 +1,194 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Scan, Camera, Sparkles, Zap, Upload } from 
-'lucide-react';
+import { Scan, Camera, Sparkles, Zap } from 'lucide-react';
 import Link from 'next/link';
+
 export default function InteriorScanning() {
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
 
   const containerVariants = {
-    hidden: { opacity: 0, y: 50 },
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      y: 0,
       transition: {
-        duration: 0.8,
-        staggerChildren: 0.2
+        staggerChildren: 0.2,
+        delayChildren: 0.3
       }
     }
   };
 
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <motion.div 
-      ref={containerRef}
-      className="p-4 sm:p-6 md:p-8 rounded-3xl max-w-7xl mx-auto my-8 min-h-screen flex items-center justify-center bg-[#F6F6EC] mt-[100px] mb-[100px]"
-      variants={containerVariants}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-      style={{
-        background: "linear-gradient(145deg, #F6F6EC 0%, #E8E8DE 100%)",
-        boxShadow: "0 25px 50px -12px rgba(139, 69, 19, 0.15)"
-      }}
+    <div 
+      className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden"
+
     >
-      <div className="flex flex-col lg:flex-row items-center gap-8 md:gap-12 w-full">
-        
-        {/* Left Content */}
-        <motion.div 
-          className="w-full lg:w-1/2 space-y-6"
-          initial={{ opacity: 0, x: -50 }}
-          animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-        >
-          <motion.div className="flex flex-col gap-2">
-            <motion.span 
-              className="text-[#594C1A]/80 text-sm sm:text-base font-medium tracking-wider"
-              variants={containerVariants}
-              
-            >
-              INTERIOR SCANNING AI
-            </motion.span>
-            <motion.h2 
-              className="text-3xl text-[#594C1A]/80 sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight"
-              whileHover={{ 
-                scale: 1.02,
-              
-              }}
-            >
-              Transform Ruangan
-              <br />
-              <span className="text-[#594C1A]/80">dengan AI Smart</span>
-            </motion.h2>
-          </motion.div>
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 opacity-5 bg-[url('/pattern-light.svg')]" />
+      <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-[#594C1A]/5 to-transparent" />
 
-          <motion.div className="space-y-4">
-            <motion.p 
-              className="text-[#594C1A]/80 text-base sm:text-lg md:text-xl font-light leading-relaxed"
-              whileHover={{ 
-                x: 10,
-                color: "#A0522D",
-                transition: { duration: 0.2 }
-              }}
-            >
-              Upload foto ruangan dan dapatkan rekomendasi furnitur pintar dengan analisis AI
-            </motion.p>
-            <motion.p 
-              className="text-[#8B4513] text-base sm:text-lg md:text-xl font-light leading-relaxed"
-              whileHover={{ 
-                x: 10,
-                color: "#A0522D",
-                transition: { duration: 0.2 }
-              }}
-            >
-              Estimasi budget real-time dan penempatan furnitur yang optimal untuk ruang Anda
-            </motion.p>
-          </motion.div>
-
+      <motion.div 
+        ref={containerRef}
+        className="relative max-w-7xl mx-auto"
+        variants={containerVariants}
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
+      >
+        <div className="flex flex-col lg:flex-row gap-12 items-center">
+          {/* Left Content - Text */}
           <motion.div 
-            className="flex flex-col sm:flex-row gap-4 w-full"
+            className="w-full lg:w-1/2 space-y-8"
+            variants={itemVariants}
+          >
+            <div className="space-y-4">
+              <motion.div 
+                className="flex items-center gap-2 text-[#594C1A]/70 uppercase tracking-wider text-sm font-medium"
+                variants={itemVariants}
+              >
+                <div className="w-4 h-px bg-[#594C1A]/50" />
+                Teknologi AI Interior
+              </motion.div>
+              
+              <motion.h2 
+                className="text-4xl sm:text-5xl font-bold text-[#594C1A] leading-tight"
+                variants={itemVariants}
+              >
+                Ubah Ruangan Anda <br />
+                <span className="text-[#8B4513]">dengan Desain Cerdas</span>
+              </motion.h2>
+              
+              <motion.p 
+                className="text-lg text-[#594C1A]/80"
+                variants={itemVariants}
+              >
+                AI kami menganalisis dimensi, pencahayaan, dan arsitektur ruangan Anda untuk menciptakan tata letak furnitur yang sempurna.
+              </motion.p>
+            </div>
+
+            <motion.div 
+              className="grid grid-cols-2 gap-4 "
+              variants={containerVariants}
+            >
+              {[
+                { icon: <Zap className="w-5 h-5" />, text: "Tata Letak Instan" },
+                { icon: <Camera className="w-5 h-5" />, text: "Pratinjau 3D" },
+                { icon: <Sparkles className="w-5 h-5" />, text: "Kesesuaian Gaya" },
+                { icon: <Scan className="w-5 h-5" />, text: "Pemindaian Presisi" }
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  className="flex items-center gap-3 p-3 bg-white/80 backdrop-blur-sm rounded-lg border border-[#E8E8DE]"
+                  variants={itemVariants}
+                  whileHover={{ y: -5, boxShadow: "0 5px 15px rgba(139, 69, 19, 0.1)" }}
+                >
+                  <div className="p-2 bg-[#594C1A]/10 rounded-full text-[#8B4513]">
+                    {item.icon}
+                  </div>
+                  <span className="font-medium text-[#594C1A]">{item.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 pt-4 "
+              variants={itemVariants}
+            >
+              <motion.button
+                className="flex-1 bg-[#594C1A] text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-[#8B4513] transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Link href="/interior-scanning" className="flex items-center gap-2">
+                  <Scan className="w-5 h-5" />
+                  Mulai Pemindaian
+                </Link>
+              </motion.button>
+              
+              <motion.button
+                className="flex-1 bg-white text-[#594C1A] py-3 px-6 rounded-lg font-medium border border-[#E8E8DE] hover:border-[#8B4513]/30 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Lihat Demo
+              </motion.button>
+            </motion.div>
+          </motion.div>
+
+          {/* Right Content - Visual Grid */}
+          <motion.div 
+            className="w-full lg:w-1/2 grid grid-cols-2 gap-6 hidden lg:block"
             variants={containerVariants}
           >
-            <motion.button 
-              className="bg-[#594C1A]/80 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg  transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
-              whileHover={{ 
-                scale: 1.05,
-                boxShadow: "0 10px 20px rgba(139, 69, 19, 0.3)",
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Link href="/interior-scanning">
-              <span className="flex items-center justify-center gap-2">
-                <Scan className="w-5 h-5" />
-                Mulai Scanning
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ repeat: Infinity, duration: 1 }}
-                >
-                  →
-                </motion.span>
-              </span>
-              </Link>
-            </motion.button>
-            <motion.button 
-              className="bg-transparent border-2 border-[#8B4513] text-[#8B4513] px-6 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-[#8B4513]/5 transition-all w-full sm:w-auto"
-              whileHover={{ 
-                scale: 1.05,
-                boxShadow: "0 10px 20px rgba(139, 69, 19, 0.1)",
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Lihat Demo
-            </motion.button>
-          </motion.div>
-        </motion.div>
 
-        {/* Right Visual Grid */}
-        <motion.div 
-          className="w-full lg:w-1/2 grid grid-cols-2 gap-4"
-          initial={{ opacity: 0, x: 50 }}
-          animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-        >
-          {/* Upload Area */}
-          <motion.div 
-            className="relative h-[200px] sm:h-[250px] md:h-[300px] rounded-xl overflow-hidden group bg-white shadow-lg"
-            whileHover={{ 
-              scale: 1.02,
-              boxShadow: "0 20px 30px rgba(139, 69, 19, 0.2)",
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="h-full flex flex-col items-center justify-center p-6 border-2 border-dashed border-[#8B4513]/30 rounded-xl">
-              <Upload className="w-16 h-16 text-[#8B4513]/60 mb-4" />
-              <p className="text-[#8B4513] font-medium text-center">Upload Foto</p>
-              <p className="text-[#8B4513]/60 text-sm text-center mt-2">Drag & drop ruangan</p>
-            </div>
+
+            {/* Analysis Card */}
             <motion.div
-              className="absolute top-4 right-4 bg-[#8B4513] text-white p-2 rounded-full"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-white rounded-xl p-6 border border-[#E8E8DE] overflow-hidden relative"
+              variants={itemVariants}
+              whileHover={{ y: -5 }}
             >
-              <Camera className="w-4 h-4" />
-            </motion.div>
-          </motion.div>
-
-          {/* AI Analysis */}
-          <motion.div 
-            className="relative h-[200px] sm:h-[250px] md:h-[300px] rounded-xl overflow-hidden group bg-white shadow-lg mt-8"
-            whileHover={{ 
-              scale: 1.02,
-              boxShadow: "0 20px 30px rgba(139, 69, 19, 0.2)",
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="h-full p-6 flex flex-col">
-              <div className="flex items-center gap-2 mb-4">
-                <Zap className="w-5 h-5 text-[#8B4513]" />
-                <span className="text-[#8B4513] font-medium">AI Analysis</span>
+              <div className="absolute top-6 right-6 bg-[#594C1A] text-white p-2 rounded-full animate-spin-slow">
+                <Sparkles className="w-4 h-4" />
               </div>
-              <div className="flex-1 bg-gray-50 rounded-lg relative overflow-hidden">
-                {/* Simulated room layout */}
-                <div className="absolute inset-4">
-                  <div className="w-full h-full relative">
-                    <div className="absolute top-2 left-2 w-8 h-6 bg-[#8B4513] rounded opacity-70"></div>
-                    <div className="absolute bottom-2 right-2 w-6 h-8 bg-[#A0522D] rounded opacity-70"></div>
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#8B4513] rounded-full"></div>
+              <div className="h-full flex flex-col">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-[#594C1A]/10 rounded-full text-[#8B4513]">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-medium text-[#594C1A]">Analisis AI</h3>
+                </div>
+                <div className="flex-1 bg-[#FAF9F5] rounded-lg relative overflow-hidden">
+                  {/* Room visualization */}
+                  <div className="absolute inset-4 flex items-center justify-center">
+                    <div className="w-full h-full relative">
+                      <div className="absolute top-2 left-2 w-8 h-6 bg-[#8B4513]/20 rounded"></div>
+                      <div className="absolute bottom-2 right-2 w-6 h-8 bg-[#8B4513]/20 rounded"></div>
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#8B4513]/30 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
+
+            {/* Recommendations Card */}
             <motion.div
-              className="absolute top-4 right-4 bg-[#8B4513] text-white p-2 rounded-full"
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              className="bg-white rounded-xl p-6 border border-[#E8E8DE] overflow-hidden"
+              variants={itemVariants}
+              whileHover={{ y: -5 }}
             >
-              <Sparkles className="w-4 h-4" />
+              <div className="h-full flex flex-col">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-[#594C1A]/10 rounded-full text-[#8B4513]">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-medium text-[#594C1A]">Rekomendasi</h3>
+                </div>
+                <div className="space-y-3 flex-1">
+                  {[
+                    { name: "Sofa Modern", price: "2.5JT", color: "bg-[#8B4513]/80" },
+                    { name: "Meja Kopi", price: "1.2JT", color: "bg-[#A0522D]/80" },
+                    { name: "Rak Buku", price: "800RB", color: "bg-[#8B4513]/60" }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-[#FAF9F5] rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
+                        <span className="text-sm font-medium text-[#594C1A]">{item.name}</span>
+                      </div>
+                      <span className="text-sm text-[#8B4513] font-medium">{item.price}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </motion.div>
-          </motion.div>
 
-          {/* Smart Recommendations */}
-          <motion.div 
-            className="relative h-[200px] sm:h-[250px] md:h-[300px] rounded-xl overflow-hidden group bg-white shadow-lg"
-            whileHover={{ 
-              scale: 1.02,
-              boxShadow: "0 20px 30px rgba(139, 69, 19, 0.2)",
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="h-full p-6 flex flex-col">
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-[#8B4513]" />
-                <span className="text-[#8B4513] font-medium">Smart Tips</span>
-              </div>
-              <div className="space-y-3 flex-1">
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-[#8B4513] rounded"></div>
-                    <span className="text-xs font-medium">Sofa</span>
-                  </div>
-                  <span className="text-xs text-[#8B4513]">2.5M</span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-[#A0522D] rounded"></div>
-                    <span className="text-xs font-medium">Table</span>
-                  </div>
-                  <span className="text-xs text-[#8B4513]">800K</span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-[#8B4513] rounded"></div>
-                    <span className="text-xs font-medium">Shelf</span>
-                  </div>
-                  <span className="text-xs text-[#8B4513]">1.2M</span>
-                </div>
-              </div>
-            </div>
           </motion.div>
-
-          {/* Budget Optimization */}
-          <motion.div 
-            className="relative h-[200px] sm:h-[250px] md:h-[300px] rounded-xl overflow-hidden group bg-white shadow-lg mt-8"
-            whileHover={{ 
-              scale: 1.02,
-              boxShadow: "0 20px 30px rgba(139, 69, 19, 0.2)",
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="h-full p-6 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-[#8B4513]/10 rounded-full flex items-center justify-center mb-4">
-                <span className="text-2xl font-bold text-[#8B4513]">4.5M</span>
-              </div>
-              <p className="text-[#8B4513] font-medium">Total Budget</p>
-              <p className="text-[#8B4513]/60 text-sm mt-1">Optimized for you</p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                <motion.div 
-                  className="bg-[#8B4513] h-2 rounded-full"
-                  initial={{ width: "0%" }}
-                  animate={isInView ? { width: "75%" } : { width: "0%" }}
-                  transition={{ duration: 1.5, delay: 1 }}
-                />
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-
-      </div>
-    </motion.div>
+        </div>
+      </motion.div>
+    </div>
   );
 }
