@@ -18,6 +18,7 @@ import {
   X 
 } from 'lucide-react';
 import { createPurchase } from '@/services/purchaseService';
+import KPRSimulator from '../components/KPRSimulator';
 import Image from 'next/image';
 interface UserDetails {
   fullName: string;
@@ -327,6 +328,7 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
             {/* Estimated Costs */}
             <div className="bg-white rounded-xl p-6 shadow-lg">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Rincian Biaya</h2>
+              <KPRSimulator housePrice={house.estimatedCost.totalCost} />
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-gray-600">
                   <span>Biaya Material</span>

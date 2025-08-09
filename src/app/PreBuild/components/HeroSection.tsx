@@ -79,7 +79,7 @@ export default function HeroSection({
   }
 
   return (
-    <div className="relative min-h-[100vh] lg:h-screen w-full overflow-hidden">
+    <div className="relative min-h-[100vh] lg:h-screen w-full overflow-hidden mt-20">
       {/* Add this right after the opening div of the component */}
       {/* Right side visual elements */}
       <div className="absolute top-0 right-0 w-1/2 h-full hidden lg:block overflow-hidden">
