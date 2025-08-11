@@ -52,10 +52,9 @@ const HomePage = () => {
           <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40 z-10 rounded-2xl" />
           <Image
             className="object-cover w-full h-full rounded-2xl"
-            src="/house.jpeg  "
+            src="/house.jpeg"
             alt="Modern luxury house"
-            layout="fill"
-            objectFit="cover"
+            fill
             priority
           />
           {/* Logo inside background image */}
