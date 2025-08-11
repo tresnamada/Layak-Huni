@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { Upload, Camera, Home, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, Camera, Home, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Image from 'next/image';
 
@@ -28,6 +28,7 @@ export default function InteriorScanningPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [showHelp, setShowHelp] = useState(false); // New state for help modal
 
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
@@ -147,12 +148,107 @@ export default function InteriorScanningPage() {
       ref={containerRef}
       className="min-h-screen bg-gradient-to-br from-[#F6F6EC] to-[#E8E8DE] text-[#4A443A] relative overflow-hidden"
     >
-      {/* Decorative Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-[#594C1A]/5 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 -left-20 w-60 h-60 bg-[#594C1A]/3 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-20 right-1/4 w-40 h-40 bg-[#594C1A]/4 rounded-full blur-xl"></div>
-      </div>
+ {/* Help Button */}
+ <motion.button
+        onClick={() => setShowHelp(true)}
+className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-full shadow-lg hover:bg-[#6B5B1F] transition-colors"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <HelpCircle className="w-6 h-6" />
+      </motion.button>
+
+      {/* Help Modal */}
+      {showHelp && (
+        <motion.div
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowHelp(false)}
+        >
+          <motion.div
+            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowHelp(false)}
+              className="absolute top-4 right-4 text-[#594C1A] hover:text-[#6B5B1F]"
+            >
+              ✕
+            </button>
+            
+            <div className="p-6 h-[80vh]">
+              <div className="flex items-center gap-3 mb-6">
+                <HelpCircle className="w-8 h-8 text-[#594C1A]" />
+                <h2 className="text-3xl font-bold text-[#594C1A]">Petunjuk Penggunaan</h2>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="bg-[#594C1A]/5 p-6 rounded-xl">
+                  <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
+                    <span className="bg-[#594C1A] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                    Unggah Foto Ruangan
+                  </h3>
+                  <p className="text-[#594C1A]/80">
+                    - Klik area unggah atau seret dan lepas foto ruangan Anda<br />
+                    - Pastikan foto jelas dan mencakup seluruh area yang ingin dianalisis<br />
+                    - Format yang didukung: JPG, PNG, WebP (maks. 10MB)
+                  </p>
+                </div>
+                
+                <div className="bg-[#594C1A]/5 p-6 rounded-xl">
+                  <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
+                    <span className="bg-[#594C1A] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                    Tentukan Anggaran
+                  </h3>
+                  <p className="text-[#594C1A]/80">
+                    - Masukkan jumlah anggaran Anda dalam Rupiah<br />
+                    - Anda bisa menggunakan tombol cepat untuk anggaran umum<br />
+                    - Sistem akan memberikan rekomendasi sesuai budget
+                  </p>
+                </div>
+                
+                <div className="bg-[#594C1A]/5 p-6 rounded-xl">
+                  <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
+                    <span className="bg-[#594C1A] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                    Analisis Ruangan
+                  </h3>
+                  <p className="text-[#594C1A]/80">
+                    - Klik tombol Analisis Sekarang setelah mengunggah foto dan menentukan anggaran<br />
+                    - Tunggu beberapa saat saat sistem menganalisis ruangan Anda<br />
+                    - Hasil akan muncul dalam beberapa detik
+                  </p>
+                </div>
+                
+                <div className="bg-[#594C1A]/5 p-6 rounded-xl">
+                  <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
+                    <span className="bg-[#594C1A] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
+                    Hasil & Rekomendasi
+                  </h3>
+                  <p className="text-[#594C1A]/80">
+                    - Sistem akan memberikan analisis jenis ruangan<br />
+                    - Rekomendasi furnitur dan dekorasi yang sesuai<br />
+                    - Estimasi harga dan saran penempatan<br />
+                    - Anda bisa mengulang proses dengan foto baru
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setShowHelp(false)}
+                className="mt-8 w-full py-3 bg-[#594C1A] text-white rounded-xl font-medium hover:bg-[#6B5B1F] transition-colors"
+              >
+                Mengerti, Tutup Panduan
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+
       <Navbar />
       {/* AI Avatar with Animation */}
       <motion.div

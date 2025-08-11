@@ -51,7 +51,7 @@ export default function InteriorScanning() {
                 variants={itemVariants}
               >
                 <div className="w-4 h-px bg-[#594C1A]/50" />
-                Teknologi AI Interior
+                SiapHuni Interior
               </motion.div>
               
               <motion.h2 
@@ -59,7 +59,7 @@ export default function InteriorScanning() {
                 variants={itemVariants}
               >
                 Ubah Ruangan Anda <br />
-                <span className="text-[#8B4513]">dengan Desain Cerdas</span>
+                <span className="text-[#938656]">dengan Desain Cerdas</span>
               </motion.h2>
               
               <motion.p 

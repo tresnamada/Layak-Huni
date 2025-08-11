@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Home, Search, Users, User, Menu, Settings, X, ChevronDown } from 'lucide-react';
 import { getAuth, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
-
+import Image from 'next/image';
 // Assuming these are correctly implemented and available
 import { isProfileComplete } from '@/services/profileService';
 import { app } from '@/lib/firebase';
@@ -299,7 +299,12 @@ export default function Navbar() {
         >
           <div className="flex items-center justify-between px-4 py-3">
             <Link href="/" className="font-bold text-xl text-amber-800">
-              SiHuni
+              <Image 
+                src={isScrolled || isMobileMenuOpen ? "/icon/Logo.svg" : "/icon/LogoPutih.svg"} 
+                alt="SiapHuni Logo" 
+                width={60} 
+                height={60} 
+              />
             </Link>
             <motion.button
               whileTap={{ scale: 0.95 }}
