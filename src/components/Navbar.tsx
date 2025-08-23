@@ -258,6 +258,11 @@ export default function Navbar() {
                             <span>Scanning Interior</span>
                           </div>
                         </Link>
+                        <Link href="/kawasan">
+                          <div className="px-4 py-2 hover:bg-amber-50 cursor-pointer text-gray-700 flex items-center gap-2">
+                            <span>Preview Kawasan</span>
+                          </div>
+                        </Link>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -371,6 +376,15 @@ export default function Navbar() {
                                   className="flex items-center space-x-4 p-3 rounded-xl text-gray-600 hover:bg-gray-50"
                                 >
                                   <span>Scanning Interior</span>
+                                </motion.div>
+                              </Link>
+                              <Link href="/kawasan">
+                                <motion.div
+                                  whileHover={{ x: 5 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  className="flex items-center space-x-4 p-3 rounded-xl text-gray-600 hover:bg-gray-50"
+                                >
+                                  <span>Preview Kawasan</span>
                                 </motion.div>
                               </Link>
                             </motion.div>

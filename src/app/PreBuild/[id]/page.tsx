@@ -208,7 +208,7 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
-        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
+        <div className="flex items-center space-x-2 text-sm text-gray-600 mb-8 mt-2 md:mt-20">
           <button
             onClick={() => router.back()}
             className="flex items-center hover:text-amber-600 transition-colors"
@@ -229,7 +229,7 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
             className="space-y-6"
           >
             <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-              <Image
+              <img
                 src={house?.imageUrl}
                 alt={house?.name}
                 className="w-full h-full object-cover"
