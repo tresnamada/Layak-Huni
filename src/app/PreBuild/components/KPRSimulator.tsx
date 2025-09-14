@@ -1,8 +1,8 @@
 "use client";
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown, Info } from 'lucide-react';
+import TenorSelector from './TenorSelector';
 
 interface KPRSimulatorProps {
   housePrice: number;
@@ -75,21 +75,14 @@ export default function KPRSimulator({ housePrice }: KPRSimulatorProps) {
           </div>
         </div>
 
-        {/* Input Tenor */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tenor: {tenor} tahun
-          </label>
-          <select
-            value={tenor}
-            onChange={(e) => setTenor(Number(e.target.value))}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"
-          >
-            {[5, 10, 15, 20, 25, 30].map((year) => (
-              <option key={year} value={year}>{year} tahun</option>
-            ))}
-          </select>
-        </div>
+        {/* Tenor Selection */}
+        <TenorSelector
+          selectedTenor={tenor}
+          onTenorChange={setTenor}
+          loanAmount={housePrice * (1 - dp / 100)}
+          interestRate={selectedBank.interestRate}
+          userIncome={minSalary} // Using calculated minimum salary as reference income
+        />
 
         {/* Pilihan Bank */}
         <div>

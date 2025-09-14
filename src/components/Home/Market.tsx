@@ -149,7 +149,7 @@ const Market = () => {
             variants={fadeInUp}
           >
             <motion.button 
-              className="bg-[#594C1A] text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-[#938656] transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
+              className="bg-[#594C1A] text-white px-6 sm:px-10 py-3 sm:py-4 rounded-lg hover:bg-[#938656] transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
               whileHover={{ 
                 scale: 1.05,
                 boxShadow: "0 10px 20px rgba(89, 76, 26, 0.3)",
@@ -157,7 +157,7 @@ const Market = () => {
               whileTap={{ scale: 0.95 }}
             >
               <span className="flex items-center justify-center gap-2">
-                <Link href="/market">
+                <Link href="/PreBuild">
                 Lihat Katalog
                 </Link>
                 <motion.span
@@ -167,16 +167,6 @@ const Market = () => {
                   →
                 </motion.span>
               </span>
-            </motion.button>
-            <motion.button 
-              className="bg-transparent border-2 border-[#594C1A] text-[#594C1A] px-6 sm:px-8 py-3 sm:py-4 rounded-lg hover:bg-[#594C1A]/5 transition-all w-full sm:w-auto"
-              whileHover={{ 
-                scale: 1.05,
-                boxShadow: "0 10px 20px rgba(89, 76, 26, 0.1)",
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Hubungi Kami
             </motion.button>
           </motion.div>
         </motion.div>

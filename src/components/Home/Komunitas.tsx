@@ -1,7 +1,7 @@
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import Image from 'next/image';
-
+import Link from "next/link"
 export default function Komunitas() {
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
@@ -87,7 +87,7 @@ export default function Komunitas() {
                 variants={itemVariants}
               >
                 Bergabung dengan <br />
-                <span className="text-[#938656]">Pecinta Rumah</span>
+                <span className="text-[#938656]">Komunitas Rumah dan Interior</span>
               </motion.h2>
               
               <motion.p 
@@ -129,7 +129,9 @@ export default function Komunitas() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
+                <Link href="/Komunitas">
                 Bergabung Sekarang
+                </Link>
                 <motion.span
                   animate={{ x: [0, 5, 0] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}
@@ -138,13 +140,6 @@ export default function Komunitas() {
                 </motion.span>
               </motion.button>
               
-              <motion.button
-                className="flex-1 bg-white text-[#594C1A] py-3 px-6 rounded-lg font-medium border border-[#E8E8DE] hover:border-[#938656]/30 transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Lihat Aktivitas
-              </motion.button>
             </motion.div>
           </motion.div>
 

@@ -148,10 +148,10 @@ export default function InteriorScanningPage() {
       ref={containerRef}
       className="min-h-screen bg-gradient-to-br from-[#F6F6EC] to-[#E8E8DE] text-[#4A443A] relative overflow-hidden"
     >
- {/* Help Button */}
- <motion.button
+      {/* Help Button */}
+      <motion.button
         onClick={() => setShowHelp(true)}
-className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-full shadow-lg hover:bg-[#6B5B1F] transition-colors"
+        className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-full shadow-lg hover:bg-[#6B5B1F] transition-colors"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
@@ -179,13 +179,13 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
             >
               ✕
             </button>
-            
+
             <div className="p-6 h-[80vh]">
               <div className="flex items-center gap-3 mb-6">
                 <HelpCircle className="w-8 h-8 text-[#594C1A]" />
                 <h2 className="text-3xl font-bold text-[#594C1A]">Petunjuk Penggunaan</h2>
               </div>
-              
+
               <div className="space-y-6">
                 <div className="bg-[#594C1A]/5 p-6 rounded-xl">
                   <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
@@ -198,7 +198,7 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
                     - Format yang didukung: JPG, PNG, WebP (maks. 10MB)
                   </p>
                 </div>
-                
+
                 <div className="bg-[#594C1A]/5 p-6 rounded-xl">
                   <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
                     <span className="bg-[#594C1A] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
@@ -210,7 +210,7 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
                     - Sistem akan memberikan rekomendasi sesuai budget
                   </p>
                 </div>
-                
+
                 <div className="bg-[#594C1A]/5 p-6 rounded-xl">
                   <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
                     <span className="bg-[#594C1A] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
@@ -222,7 +222,7 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
                     - Hasil akan muncul dalam beberapa detik
                   </p>
                 </div>
-                
+
                 <div className="bg-[#594C1A]/5 p-6 rounded-xl">
                   <h3 className="font-bold text-lg text-[#594C1A] mb-3 flex items-center gap-2">
                     <span className="bg-[#594C1A] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
@@ -236,7 +236,7 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
                   </p>
                 </div>
               </div>
-              
+
               <button
                 onClick={() => setShowHelp(false)}
                 className="mt-8 w-full py-3 bg-[#594C1A] text-white rounded-xl font-medium hover:bg-[#6B5B1F] transition-colors"
@@ -278,156 +278,288 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
           animate={isInView ? "visible" : "hidden"}
           variants={stagger}
         >
-          {/* Hero Section */}
+          {/* Hero Section - Enhanced */}
           <motion.div
-            className="text-center mb-20"
+            className="mb-20 relative overflow-hidden"
             variants={fadeInUp}
           >
+            {/* Background Decorative Elements */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-10 right-20 w-40 h-40 bg-gradient-to-br from-[#594C1A]/10 to-[#6B5B1F]/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-10 left-10 w-32 h-32 bg-gradient-to-br from-[#6B5B1F]/10 to-[#594C1A]/10 rounded-full blur-2xl"></div>
+            </div>
 
-            <motion.h1
-              className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] bg-clip-text text-transparent mb-6 tracking-tight"
-              variants={fadeInUp}
-            >
-              Analisis Interior SiHuni
-            </motion.h1>
+            {/* Hero Content with Creative Layout */}
+            <div className="grid lg:grid-cols-3 gap-8 items-center max-w-7xl mx-auto px-4">
+              {/* Left Side - Decorative Element */}
+              <motion.div
+                className="hidden lg:block"
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="relative">
+                <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-[#594C1A]/20 shadow-lg transform rotate-3">
+                  <div className="text-2xl font-bold text-[#594C1A]">AI-Powered</div>
+                  <div className="text-sm text-[#594C1A]/60">Technology</div>
+                </div>
+                </div>
+              </motion.div>
 
-            <motion.p
-              className="text-xl text-[#594C1A]/80 max-w-2xl mx-auto leading-relaxed"
-              variants={fadeInUp}
-            >
-              Transformasi ruangan Anda dengan teknologi AI terdepan. Unggah foto, tentukan anggaran, dan dapatkan rekomendasi yang dipersonalisasi.
-            </motion.p>
+              {/* Center - Main Title */}
+              <motion.div className="text-center lg:col-span-1" variants={fadeInUp}>
+                <div className="relative inline-block">
+                  <motion.h1
+                    className="text-5xl md:text-6xl font-bold mb-6 tracking-tight"
+                    variants={fadeInUp}
+                  >
+                    <span className="block text-[#4A443A] transform -rotate-1">
+                      Analisis
+                    </span>
+                    <span className="block bg-gradient-to-r from-amber-600 via-orange-500 to-red-500 bg-clip-text text-transparent transform rotate-1 -mt-2">
+                      Interior
+                    </span>
+                    <span className="block text-[#594C1A] transform -rotate-1 -mt-2">
+                      SiHuni
+                    </span>
+                  </motion.h1>
+                </div>
+
+                <motion.p
+                  className="text-lg text-[#594C1A]/80 max-w-md mx-auto leading-relaxed"
+                  variants={fadeInUp}
+                >
+                  Transformasi ruangan Anda dengan
+                  <span className="font-semibold text-[#594C1A]"> teknologi AI terdepan</span>.
+                  Unggah foto, tentukan anggaran.
+                </motion.p>
+              </motion.div>
+
+              {/* Right Side - Stats */}
+              <motion.div
+                className="hidden lg:flex flex-col gap-4"
+                initial={{ x: 50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-[#6B5B1F]/20 shadow-lg transform -rotate-2">
+                  <div className="text-2xl font-bold text-[#6B5B1F]">Instant</div>
+                  <div className="text-sm text-[#6B5B1F]/60">Analysis</div>
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
 
-          {/* Upload and Budget Section */}
+          {/* Upload and Budget Section - Creative Asymmetric Layout */}
           <motion.div
-            className="grid lg:grid-cols-3 gap-8 mb-16"
+            className="mb-24 max-w-7xl mx-auto px-4"
             variants={fadeInUp}
           >
-            {/* Upload Card */}
-            <motion.div
-              className="lg:col-span-2"
-              variants={scaleIn}
-              whileHover={{ y: -5 }}
-            >
-              <div className="relative bg-white/95 backdrop-blur-lg p-8 rounded-3xl border border-white/60 shadow-lg h-full">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-[#594C1A] to-[#6B5B1F] rounded-2xl text-white">
-                    <Camera className="w-6 h-6" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-[#594C1A]">Upload Foto Ruangan</h2>
-                </div>
+            <div className="grid lg:grid-cols-5 gap-8 items-start">
 
-                <div
-                  className={`relative border-2 border-dashed rounded-2xl transition-all ${dragActive ? 'border-[#594C1A] bg-[#594C1A]/5' : 'border-[#594C1A]/20 hover:border-[#594C1A]/40'
-                    }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-
-                  {previewUrl ? (
-                    <div className="p-4">
-                      <div className="relative h-64 rounded-xl overflow-hidden">
-                        <Image
-                          src={previewUrl}
-                          alt="Preview"
-                          fill
-                          className="object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              {/* Upload Card - Takes 3 columns with creative positioning */}
+              <motion.div
+                className="lg:col-span-3 order-2 lg:order-1"
+                variants={scaleIn}
+                whileHover={{ y: -5 }}
+              >
+                <div className="relative bg-white/95 backdrop-blur-lg rounded-3xl border border-white/60 shadow-2xl overflow-hidden transform lg:-rotate-1 hover:rotate-0 transition-transform duration-300">
+                  {/* Card Header with Creative Design */}
+                  <div className="relative bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] p-6 text-white">
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent"></div>
+                    <div className="relative flex items-center gap-4">
+                      <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                        <Camera className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">Upload Foto Ruangan</h2>
+                        <p className="text-white/80 text-sm">Drag & drop atau klik untuk memilih</p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="text-center p-12">
-                      <Upload className="w-12 h-12 mx-auto text-[#594C1A] mb-4" />
-                      <h3 className="text-xl font-medium text-[#594C1A] mb-2">
-                        Seret & Lepas Foto atau Klik untuk Memilih
-                      </h3>
-                      <p className="text-[#594C1A]/60">Format: JPG, PNG, WebP (maks. 10MB)</p>
+                    {/* Decorative wave */}
+                    <div className="absolute bottom-0 left-0 right-0 h-4 bg-white rounded-t-3xl"></div>
+                  </div>
+
+                  {/* Upload Area */}
+                  <div className="p-8 pt-4">
+                    <div
+                      className={`relative border-2 border-dashed rounded-3xl transition-all ${dragActive
+                          ? 'border-[#594C1A] bg-gradient-to-br from-[#594C1A]/10 to-[#6B5B1F]/5 scale-105'
+                          : 'border-[#594C1A]/30 hover:border-[#594C1A]/60 hover:bg-[#594C1A]/5'
+                        }`}
+                      onDragEnter={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDragOver={handleDrag}
+                      onDrop={handleDrop}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+
+                      {previewUrl ? (
+                        <div className="p-6">
+                          <div className="relative h-64 rounded-2xl overflow-hidden group">
+                            <Image
+                              src={previewUrl}
+                              alt="Preview"
+                              fill
+                              className="object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-[#594C1A]">
+                              Foto Siap Dianalisis
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center p-16">
+                          <div className="relative inline-block mb-6">
+                            <div className="w-20 h-20 bg-gradient-to-br from-[#594C1A]/20 to-[#6B5B1F]/20 rounded-full flex items-center justify-center">
+                              <Upload className="w-10 h-10 text-[#594C1A]" />
+                            </div>
+                            <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-[#6B5B1F] to-[#594C1A] rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">+</span>
+                            </div>
+                          </div>
+
+                          <h3 className="text-xl font-bold text-[#594C1A] mb-2">
+                            Unggah Foto Ruangan Anda
+                          </h3>
+                          <p className="text-[#594C1A]/60 mb-4">
+                            Seret & lepas atau klik untuk memilih file
+                          </p>
+                          <div className="inline-flex items-center gap-2 bg-[#594C1A]/5 px-4 py-2 rounded-full">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-sm text-[#594C1A]/80">JPG, PNG, WebP (maks. 10MB)</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Budget Card */}
-            <motion.div
-              variants={scaleIn}
-              whileHover={{ y: -5 }}
-            >
-              <div className="relative bg-white/95 backdrop-blur-lg p-8 rounded-3xl border border-white/60 shadow-lg h-full">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-[#594C1A] to-[#6B5B1F] rounded-2xl text-white">
-
                   </div>
-                  <h2 className="text-2xl font-bold text-[#594C1A]">Tentukan Anggaran</h2>
                 </div>
+              </motion.div>
 
-                <div className="space-y-6">
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#594C1A] font-medium">
-                      Rp
-                    </span>
-                    <input
-                      type="number"
-                      value={budget}
-                      onChange={(e) => setBudget(e.target.value)}
-                      placeholder="Contoh: 5000000"
-                      className="w-full pl-12 pr-4 py-3 border border-[#594C1A]/20 rounded-xl focus:ring-2 focus:ring-[#594C1A]/30 focus:border-[#594C1A]"
-                    />
-                  </div>
+              {/* Budget Card - Takes 2 columns with offset positioning */}
+              <motion.div
+                className="lg:col-span-2 order-1 lg:order-2"
+                variants={scaleIn}
+                whileHover={{ y: -5 }}
+              >
+                <div className="relative bg-white/95 backdrop-blur-lg rounded-3xl border border-white/60 shadow-2xl overflow-hidden transform lg:rotate-2 hover:rotate-0 transition-transform duration-300 lg:mt-16">
+                  {/* Decorative top border */}
+                  <div className="h-2 bg-gradient-to-r from-[#594C1A] to-[#6B5B1F]"></div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {[2000000, 5000000, 10000000, 20000000].map((amount) => (
+                  <div className="p-8">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#594C1A] to-[#6B5B1F] rounded-2xl flex items-center justify-center transform -rotate-12">
+                          <HelpCircle className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border-2 border-white"></div>
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-[#594C1A]">Anggaran</h2>
+                        <p className="text-[#594C1A]/60 text-sm">Tentukan budget Anda</p>
+                      </div>
+                    </div>
+
+                    {/* Budget Input with Creative Design */}
+                    <div className="space-y-6">
+                      <div className="relative">
+                        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] rounded-l-xl flex items-center justify-center">
+                          <span className="text-white font-bold">Rp</span>
+                        </div>
+                        <input
+                          type="number"
+                          value={budget}
+                          onChange={(e) => setBudget(e.target.value)}
+                          placeholder="5.000.000"
+                          className="w-full pl-20 pr-4 py-4 border-2 border-[#594C1A]/20 rounded-xl focus:ring-4 focus:ring-[#594C1A]/20 focus:border-[#594C1A] font-medium text-lg"
+                        />
+                      </div>
+
+                      {/* Quick Select Buttons - Creative Grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { amount: 2000000, label: '2 Juta', popular: false },
+                          { amount: 5000000, label: '5 Juta', popular: true },
+                          { amount: 10000000, label: '10 Juta', popular: false },
+                          { amount: 20000000, label: '20 Juta', popular: false }
+                        ].map((item) => (
+                          <button
+                            key={item.amount}
+                            onClick={() => setBudget(item.amount.toString())}
+                            className={`relative py-3 px-4 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 ${budget === item.amount.toString()
+                                ? 'bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] text-white shadow-lg'
+                                : 'bg-[#594C1A]/5 text-[#594C1A] hover:bg-[#594C1A]/10 border border-[#594C1A]/20'
+                              }`}
+                          >
+                            {item.popular && (
+                              <div className="absolute -top-2 -right-2 bg-amber-400 text-white text-xs px-2 py-1 rounded-full font-bold">
+                                Popular
+                              </div>
+                            )}
+                            {item.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Analysis Button - Enhanced */}
                       <button
-                        key={amount}
-                        onClick={() => setBudget(amount.toString())}
-                        className={`py-2 rounded-lg text-sm font-medium ${budget === amount.toString()
-                            ? 'bg-[#594C1A] text-white'
-                            : 'bg-[#594C1A]/5 text-[#594C1A] hover:bg-[#594C1A]/10'
+                        onClick={analyzeRoom}
+                        disabled={isLoading || !imageFile || !budget}
+                        className={`group relative w-full py-4 px-8 rounded-xl font-bold text-lg text-white overflow-hidden transition-all transform hover:scale-105 ${isLoading || !imageFile || !budget
+                            ? 'bg-gray-400 cursor-not-allowed scale-100'
+                            : 'bg-gradient-to-r from-[#594C1A] via-[#6B5B1F] to-[#594C1A] shadow-xl hover:shadow-2xl'
                           }`}
                       >
-                        {amount.toLocaleString('id-ID')}
+                        {/* Button shine effect */}
+                        {!isLoading && imageFile && budget && (
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                        )}
+
+                        <div className="relative flex items-center justify-center gap-3">
+                          {isLoading ? (
+                            <>
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                className="w-6 h-6 border-2 border-white border-t-transparent rounded-full"
+                              />
+                              <span>Menganalisis Ruangan...</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                                <span className="text-sm">✨</span>
+                              </div>
+                              <span>Mulai Analisis AI</span>
+                              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                                <span className="text-sm">→</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </button>
-                    ))}
+
+                      {/* Helper Text */}
+                      <p className="text-center text-xs text-[#594C1A]/60">
+                        💡 Analisis akan memberikan rekomendasi furniture dan dekorasi sesuai budget
+                      </p>
+                    </div>
                   </div>
-
-                  <button
-                    onClick={analyzeRoom}
-                    disabled={isLoading || !imageFile || !budget}
-                    className={`w-full py-3 px-6 rounded-xl font-medium text-white flex items-center justify-center gap-2 ${isLoading || !imageFile || !budget
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] hover:from-[#6B5B1F] hover:to-[#594C1A]'
-                      }`}
-                  >
-                    {isLoading ? (
-                      <>
-                        <motion.span
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-
-                        </motion.span>
-                        Menganalisis...
-                      </>
-                    ) : (
-                      <>
-
-                        Analisis Sekarang
-                      </>
-                    )}
-                  </button>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
+
+            {/* Bottom Decorative Wave */}
+            <div className="relative mt-16">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#594C1A]/5 via-[#6B5B1F]/5 to-[#594C1A]/5 transform -skew-y-1 h-12"></div>
+            </div>
           </motion.div>
 
           {/* Error Display */}
@@ -457,9 +589,6 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
               {/* Results Header */}
               <div className="text-center mb-12">
                 <div className="inline-flex items-center gap-4 mb-6">
-                  <div className="p-4 bg-gradient-to-br from-[#594C1A] to-[#6B5B1F] rounded-2xl text-white">
-
-                  </div>
                   <div className="h-px w-16 bg-gradient-to-r from-[#594C1A]/40 via-[#594C1A]/20 to-transparent"></div>
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold text-[#594C1A] mb-4">
@@ -495,13 +624,13 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
                     <CheckCircle className="w-8 h-8 text-green-600" />
                     <h3 className="text-xl font-bold text-green-800">Ringkasan</h3>
                   </div>
-                  <p className="text-green-700 leading-relaxed">
+                  <p className="text-green-900 leading-relaxed">
                     {analysisResult.summary}
                   </p>
                 </motion.div>
               </div>
 
-              {/* Recommendations */}
+              Recommendations
               <div className="mb-12">
                 <div className="text-center mb-8">
                   <h3 className="text-2xl md:text-3xl font-bold text-[#594C1A] mb-4">
@@ -530,27 +659,13 @@ className="fixed bottom-8 right-8 z-[100] bg-[#594C1A] text-white p-4 rounded-fu
                         <p className="text-[#594C1A]/70 mb-4">{item.description}</p>
 
                         <div className="bg-blue-50/50 border-l-4 border-blue-400 p-4 rounded-r">
-                          <p className="font-medium text-blue-800 mb-1">Saran Penempatan</p>
-                          <p className="text-blue-700 text-sm">{item.placement_suggestion}</p>
+                          <p className="font-medium text-[#9A3F3F] mb-1">Saran Penempatan</p>
+                          <p className="text-[#B87C4C] text-sm">{item.placement_suggestion}</p>
                         </div>
+
                       </div>
                     </motion.div>
                   ))}
-                </div>
-              </div>
-
-              {/* Call to Action */}
-              <div className="text-center">
-                <div className="inline-block bg-gradient-to-r from-[#594C1A]/5 to-[#6B5B1F]/5 rounded-2xl p-8 border border-[#594C1A]/20">
-                  <h4 className="text-xl font-bold text-[#594C1A] mb-2">
-                    Siap Mentransformasi Ruangan Anda?
-                  </h4>
-                  <p className="text-[#594C1A]/70 mb-6 max-w-md mx-auto">
-                    Implementasikan rekomendasi ini untuk menciptakan ruangan impian Anda
-                  </p>
-                  <button className="bg-gradient-to-r from-[#594C1A] to-[#6B5B1F] text-white py-3 px-8 rounded-xl font-medium hover:from-[#6B5B1F] hover:to-[#594C1A] transition-all">
-                    Mulai Sekarang
-                  </button>
                 </div>
               </div>
             </motion.div>

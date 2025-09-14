@@ -99,23 +99,16 @@ export default function InteriorScanning() {
               variants={itemVariants}
             >
               <motion.button
-                className="flex-1 bg-[#594C1A] text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-[#8B4513] transition-colors"
+                className="flex-1 bg-[#594C1A] text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-opacity-50 transition-colors"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Link href="/interior-scanning" className="flex items-center gap-2">
                   <Scan className="w-5 h-5" />
-                  Mulai Pemindaian
+                  Mulai Scanning
                 </Link>
               </motion.button>
               
-              <motion.button
-                className="flex-1 bg-white text-[#594C1A] py-3 px-6 rounded-lg font-medium border border-[#E8E8DE] hover:border-[#8B4513]/30 transition-colors"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Lihat Demo
-              </motion.button>
             </motion.div>
           </motion.div>
 

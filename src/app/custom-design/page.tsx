@@ -624,7 +624,7 @@ export default function CustomDesignPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#F6F6EC] to-[#F0F4E8]">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 md:pt-20">
         {/* Progress Steps */}
         <div className="mb-12">
           <div className="flex items-center justify-between">
