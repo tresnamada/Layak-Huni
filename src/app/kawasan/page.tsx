@@ -15,27 +15,56 @@ import {
   HelpCircle,
   TrendingUp,
   Clock,
-  CheckCircle,
+
   Navigation,
-  Thermometer,
   CloudRain,
   Wind,
   BarChart3,
   Calendar,
-  AlertCircle,
-  Heart,
-  Users,
-  BookOpen,
+
   Home,
   Leaf,
   Wrench,
-  Eye
 } from "lucide-react"
 import Navbar from "@/components/Navbar"
 
+interface RiskAnalysis {
+  analisis_risiko?: Record<string, {
+    level?: string;
+    faktor?: string[];
+    frekuensi?: string;
+    musim?: string;
+  }>;
+  data_geografis?: Record<string, string>;
+  rekomendasi_kawasan?: {
+    zona_teraman?: string;
+    zona_berisiko?: string;
+    arah_pembangunan?: string;
+  };
+  rekomendasi_desain?: {
+    fondasi?: string;
+    struktur?: string;
+    material?: Record<string, string>;
+    fitur_keamanan?: string[];
+    teknologi_mitigasi?: string[];
+  };
+  rekomendasi_lingkungan?: Record<string, string>;
+  daftar_material?: Array<{
+    nama: string;
+    jenis: string;
+    keunggulan: string[];
+    sumber: string;
+  }>;
+  skor_risiko?: {
+    total?: number;
+    kategori?: string;
+    trend?: string;
+  };
+}
+
 export default function SimulasiKawasan() {
   const [location, setLocation] = useState("")
-  const [riskData, setRiskData] = useState<any>(null)
+  const [riskData, setRiskData] = useState<RiskAnalysis | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [scanProgress, setScanProgress] = useState(0)
   const [scanPhase, setScanPhase] = useState("")
@@ -116,7 +145,7 @@ export default function SimulasiKawasan() {
     }
   }
 
-  const getRiskColor = (level: string) => {
+  const getRiskColor = (level: string | undefined) => {
     switch (level?.toLowerCase()) {
       case "tinggi":
         return "from-red-400 to-red-500"
@@ -129,7 +158,7 @@ export default function SimulasiKawasan() {
     }
   }
 
-  const getRiskPercentage = (level: string) => {
+  const getRiskPercentage = (level: string | undefined) => {
     switch (level?.toLowerCase()) {
       case "tinggi": return 85
       case "sedang": return 60
@@ -485,7 +514,7 @@ export default function SimulasiKawasan() {
                   initial="hidden"
                   animate="visible"
                 >
-                  {riskData.analisis_risiko && Object.entries(riskData.analisis_risiko).map(([riskType, data]: [string, any]) => (
+                  {riskData.analisis_risiko && Object.entries(riskData.analisis_risiko).map(([riskType, data]) => (
                     <motion.div
                       key={riskType}
                       className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/60 hover:bg-white hover:shadow-xl transition-all duration-300"
@@ -599,7 +628,7 @@ export default function SimulasiKawasan() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {Object.entries(riskData.data_geografis).map(([key, value]: [string, any]) => (
+                    {Object.entries(riskData.data_geografis).map(([key, value]) => (
                       <div key={key} className="bg-stone-50/50 rounded-xl p-4">
                         <h4 className="font-semibold text-[#4A443A] mb-2 capitalize">{key.replace(/_/g, ' ')}</h4>
                         <p className="text-[#4A443A]/90">{value}</p>
@@ -671,7 +700,7 @@ export default function SimulasiKawasan() {
                             <div>
                               <p className="font-medium text-[#4A443A]">Material:</p>
                               <div className="text-[#4A443A]/90 text-sm">
-                                {Object.entries(riskData.rekomendasi_desain.material).map(([key, value]: [string, any]) => (
+                                {Object.entries(riskData.rekomendasi_desain.material).map(([key, value]) => (
                                   <p key={key}><span className="capitalize">{key}</span>: {value}</p>
                                 ))}
                               </div>
@@ -688,7 +717,7 @@ export default function SimulasiKawasan() {
                             <div className="mb-3">
                               <p className="font-medium text-[#4A443A]">Fitur:</p>
                               <ul className="text-[#4A443A]/90 text-sm list-disc list-inside pl-2">
-                                {riskData.rekomendasi_desain.fitur_keamanan.map((fitur: string, i: number) => (
+                                {riskData.rekomendasi_desain.fitur_keamanan.map((fitur, i) => (
                                   <li key={i}>{fitur}</li>
                                 ))}
                               </ul>
@@ -698,7 +727,7 @@ export default function SimulasiKawasan() {
                             <div>
                               <p className="font-medium text-[#4A443A]">Teknologi:</p>
                               <ul className="text-[#4A443A]/90 text-sm list-disc list-inside pl-2">
-                                {riskData.rekomendasi_desain.teknologi_mitigasi.map((tech: string, i: number) => (
+                                {riskData.rekomendasi_desain.teknologi_mitigasi.map((tech, i) => (
                                   <li key={i}>{tech}</li>
                                 ))}
                               </ul>
@@ -715,7 +744,7 @@ export default function SimulasiKawasan() {
                           <Leaf className="w-4 h-4 text-green-600" />
                           Rekomendasi Lingkungan
                         </h4>
-                        {Object.entries(riskData.rekomendasi_lingkungan).map(([key, value]: [string, any]) => (
+                        {Object.entries(riskData.rekomendasi_lingkungan).map(([key, value]) => (
                           <div key={key} className="mb-3 last:mb-0">
                             <p className="font-medium text-[#4A443A] capitalize">{key.replace(/_/g, ' ')}:</p>
                             <p className="text-[#4A443A]/90 text-sm">{value}</p>
@@ -742,7 +771,7 @@ export default function SimulasiKawasan() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {riskData.daftar_material.map((material: any, index: number) => (
+                  {riskData.daftar_material?.map((material, index) => (
                       <div key={index} className="bg-stone-50/50 rounded-xl p-5 border border-stone-200">
                         <h4 className="font-semibold text-[#4A443A] mb-2">{material.nama}</h4>
                         <p className="text-sm text-[#6B5B4F] mb-3 capitalize">Jenis: {material.jenis}</p>

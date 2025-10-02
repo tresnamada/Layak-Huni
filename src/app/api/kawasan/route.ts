@@ -126,8 +126,8 @@ Data tambahan untuk analisis:
         const result = await model.generateContent(prompt);
         responseText = result.response.text();
         break;
-      } catch (err: any) {
-        if (err.status === 429) {
+      } catch (err: unknown) {
+        if (err && typeof err === 'object' && 'status' in err && err.status === 429) {
           return NextResponse.json(
             { error: "Terlalu banyak permintaan (429). Coba lagi nanti." },
             { status: 429 }
@@ -149,7 +149,7 @@ Data tambahan untuk analisis:
       } else {
         throw new Error("No JSON found in response");
       }
-    } catch (e) {
+    } catch {
       console.error("❌ JSON parsing gagal. Raw:", responseText);
       return NextResponse.json(
         { error: "Format JSON AI tidak valid", raw: responseText },
@@ -171,11 +171,11 @@ Data tambahan untuk analisis:
     analysisData = { ...defaultStructure, ...analysisData };
 
     return NextResponse.json(analysisData);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in /api/kawasan:", error);
-    const message = typeof error?.message === "string" ? error.message : "";
+    const message = error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : '';
     const isOverloaded =
-      error?.status === 503 || /503|unavailable|overloaded/i.test(message);
+      (error && typeof error === 'object' && 'status' in error && error.status === 503) || /503|unavailable|overloaded/i.test(message);
 
     if (isOverloaded) {
       return NextResponse.json(

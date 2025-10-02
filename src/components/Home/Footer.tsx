@@ -54,7 +54,7 @@ const Footer = () => {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Tetap Terhubung dengan SiapHuni
+              Tetap Terhubung dengan LayakHuni
             </h2>
             <p className="text-lg text-[#594C1A]/80 max-w-2xl mx-auto mb-8">
               Dapatkan informasi terbaru tentang proyek, tips desain, dan penawaran eksklusif
@@ -151,7 +151,7 @@ const Footer = () => {
       <div className="relative py-6 px-4 sm:px-6 lg:px-8 border-t border-[#594C1A]/10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[#594C1A]/60 text-sm">
-            © {new Date().getFullYear()} SiapHuni. All rights reserved.
+            © {new Date().getFullYear()} LayakHuni. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link href="#" className="text-[#594C1A]/60 hover:text-[#594C1A] text-sm transition-colors">

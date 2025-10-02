@@ -189,7 +189,7 @@ const HomePage = () => {
                     className="text-white/90 text-xs sm:text-sm md:text-base font-light drop-shadow-sm"
                     variants={fadeInUp}
                   >
-                    SiapHuni - Solusi Hunian Modern
+                    LayakHuni - Solusi Hunian Modern
                   </motion.h2>
                 </motion.div>
 

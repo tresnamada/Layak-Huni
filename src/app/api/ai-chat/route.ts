@@ -489,6 +489,128 @@ Berikan HANYA respons JSON tanpa pengantar atau penjelasan tambahan.
           { status: 503 }
         );
       }
+    } else if (stage === 'floorplan') {
+      // Auto-generate floor plan based on user's custom design choices
+      const floorPlanPrompt = `
+Anda adalah asisten AI arsitektur untuk SiapHuni, platform pembuatan rumah custom di Indonesia.
+
+User telah menyelesaikan pemilihan desain dengan detail berikut:
+${userMessage}
+
+Tugas Anda: Buatlah denah rumah (floor plan) yang DETAIL, REALISTIS, dan sesuai dengan pilihan user.
+
+Format respons sebagai objek JSON dengan struktur LENGKAP:
+{
+  "floorPlan": {
+    "name": "Nama Denah yang menarik",
+    "description": "Deskripsi singkat denah (1-2 kalimat)",
+    "totalArea": "Luas total (contoh: 80m²)",
+    "layoutType": "Single Floor" atau "Two Floors",
+    "orientation": "Utara-Selatan" atau "Timur-Barat",
+    "rooms": [
+      {
+        "id": "room-1",
+        "name": "Nama Ruangan",
+        "size": "4x3m",
+        "area": "12m²",
+        "position": {
+          "x": 10,
+          "y": 10,
+          "width": 30,
+          "height": 25
+        },
+        "color": "#e3f2fd",
+        "description": "Fungsi ruangan",
+        "features": ["Fitur 1", "Fitur 2"]
+      }
+    ],
+    "doors": [
+      {
+        "id": "door-1",
+        "from": "Eksterior",
+        "to": "Ruang Tamu",
+        "position": { "x": 25, "y": 10 },
+        "type": "main"
+      }
+    ],
+    "windows": [
+      {
+        "id": "window-1",
+        "room": "Ruang Tamu",
+        "position": { "x": 15, "y": 10 },
+        "size": "large",
+        "orientation": "north"
+      }
+    ],
+    "features": [
+      "Pencahayaan alami optimal",
+      "Ventilasi silang",
+      "Sirkulasi efisien"
+    ],
+    "circulation": {
+      "efficiency": "Baik/Sangat Baik",
+      "description": "Penjelasan sirkulasi"
+    },
+    "recommendations": [
+      "Rekomendasi 1",
+      "Rekomendasi 2",
+      "Rekomendasi 3"
+    ]
+  }
+}
+
+ATURAN PENTING:
+1. Koordinat position (x, y, width, height) dalam skala 0-100
+2. Pastikan ruangan TIDAK OVERLAP - hitung koordinat dengan teliti
+3. Total luas ruangan ≈ 70-80% dari totalArea (sisanya untuk sirkulasi)
+4. Ruangan harus bersebelahan secara logis (kamar mandi dekat kamar tidur, dapur dekat ruang makan)
+5. Pintu "main" dari eksterior ke ruang tamu, pintu "interior" antar ruangan
+6. Jendela di dinding luar untuk ventilasi
+7. Warna ruangan berbeda-beda untuk visualisasi:
+   - Ruang Tamu: #e3f2fd (biru muda)
+   - Kamar Tidur: #f3e5f5 (ungu muda)
+   - Dapur: #e8f5e8 (hijau muda)
+   - Kamar Mandi: #fff3e0 (orange muda)
+   - Ruang Keluarga: #e1f5fe (biru terang)
+
+UKURAN STANDAR RUANGAN:
+- Ruang Tamu: 12-16m² (4x3m atau 4x4m)
+- Kamar Tidur Utama: 12-16m² (4x3m atau 4x4m)
+- Kamar Tidur: 9-12m² (3x3m)
+- Dapur: 6-9m² (2x3m atau 3x3m)
+- Kamar Mandi: 3-4m² (1.5x2m atau 2x2m)
+- Ruang Keluarga: 12-16m² (4x3m atau 4x4m)
+
+CONTOH LAYOUT (untuk referensi koordinat):
+Rumah 80m² bisa dibagi:
+- Baris atas (y: 10-40): Ruang Tamu (x:10-40), Kamar Tidur 1 (x:45-70), Dapur (x:75-95)
+- Baris bawah (y: 45-75): Kamar Tidur 2 (x:10-40), Ruang Keluarga (x:45-75), Kamar Mandi (x:80-95)
+
+Berikan HANYA respons JSON tanpa pengantar atau penjelasan tambahan.
+`;
+
+      try {
+        response = await retryWithBackoff(() => chat.sendMessage(floorPlanPrompt));
+        const aiResponse = response.response.text();
+        
+        // Clean the response to ensure it's valid JSON
+        const cleanResponse = aiResponse.replace(/```json\n?|\n?```/g, '').trim();
+        
+        return NextResponse.json({ 
+          response: cleanResponse,
+          success: true
+        });
+      } catch (error) {
+        console.error('Error generating floor plan:', error);
+        return NextResponse.json(
+          { 
+            error: 'Gagal membuat denah. Silakan coba lagi dalam beberapa saat.',
+            details: error instanceof Error ? error.message : 'Unknown error',
+            success: false
+          },
+          { status: 503 }
+        );
+      }
     } else {
       // General chat
       const chatPrompt = `

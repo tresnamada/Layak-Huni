@@ -229,7 +229,7 @@ export default function HouseDetailPage({ params }: { params: Promise<{ id: stri
             className="space-y-6"
           >
             <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-              <img
+              <Image
                 src={house?.imageUrl}
                 alt={house?.name}
                 className="w-full h-full object-cover"

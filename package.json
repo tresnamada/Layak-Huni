@@ -19,6 +19,8 @@
     "chart.js": "^4.4.9",
     "drei": "^2.2.21",
     "firebase": "^11.6.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.501.0",
     "motion": "^12.7.4",

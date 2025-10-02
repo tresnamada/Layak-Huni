@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiHome, FiDollarSign, FiMapPin, FiLayers, FiCheck, FiArrowRight, FiMessageSquare, FiLoader, FiDownload, FiList } from 'react-icons/fi';
+import { FiHome, FiDollarSign, FiMapPin, FiLayers, FiCheck, FiArrowRight, FiMessageSquare, FiLoader, FiDownload, FiImage, FiFileText, FiAlertTriangle } from 'react-icons/fi';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { saveGeneratedDesign, } from '@/services/designService';
+import Image from 'next/image';
 
 interface DesignStep {
   id: string;
@@ -67,6 +68,23 @@ interface FinalResult {
   features: string[];
   recommendations: string[];
   nextSteps: string[];
+}
+
+interface FloorPlan {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  specifications: {
+    totalArea: string;
+    rooms: Array<{
+      name: string;
+      size: string;
+      description: string;
+    }>;
+    features: string[];
+  };
+  downloadUrl: string;
 }
 
 interface DesignFeature {
@@ -149,39 +167,42 @@ export default function CustomDesignPage() {
     features: string[];
     considerations: string[];
   } | null>(null);
+  const [floorPlan, setFloorPlan] = useState<FloorPlan | null>(null);
+  const [, setIsGeneratingFloorPlan] = useState(false);
+  const [showFloorPlanStep] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
 
   const designSteps: DesignStep[] = [
     {
-      id: 'describe',
-      title: 'Deskripsi Rumah',
-      description: 'Ceritakan rumah impian Anda',
+      id: 'description',
+      title: 'Deskripsi Rumah Impian',
+      description: 'Ceritakan rumah impian Anda dengan detail',
       icon: <FiMessageSquare className="w-6 h-6" />
     },
     {
-      id: 'style',
-      title: 'Pilih Gaya Rumah',
-      description: 'Tentukan gaya arsitektur yang Anda inginkan',
+      id: 'design-selection',
+      title: 'Pilih Desain AI',
+      description: 'Pilih dari berbagai opsi desain yang dihasilkan AI',
       icon: <FiHome className="w-6 h-6" />
     },
     {
-      id: 'features',
-      title: 'Pilih Fitur',
-      description: 'Pilih fitur-fitur yang diinginkan',
-      icon: <FiLayers className="w-6 h-6" />
-    },
-    {
       id: 'budget',
-      title: 'Tentukan Budget',
-      description: 'Pilih rentang budget yang sesuai',
+      title: 'Budget & Anggaran',
+      description: 'Tentukan budget untuk proyek rumah Anda',
       icon: <FiDollarSign className="w-6 h-6" />
     },
     {
       id: 'location',
-      title: 'Pilihan Medan Tanah',
-      description: 'Tentukan lokasi dan kondisi medan tanah',
+      title: 'Lokasi & Lahan',
+      description: 'Pilih jenis lokasi dan kondisi lahan',
       icon: <FiMapPin className="w-6 h-6" />
+    },
+    {
+      id: 'features',
+      title: 'Fitur Tambahan',
+      description: 'Pilih fitur dan karakteristik khusus',
+      icon: <FiLayers className="w-6 h-6" />
     }
   ];
 
@@ -351,7 +372,7 @@ export default function CustomDesignPage() {
     });
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     // Check if all required selections have been made
     if (selectedDesign && selectedLocation && (selectedBudget || budgetInput) && selectedFeatures.length > 0) {
       const budget = selectedBudget?.range || budgetInput;
@@ -376,16 +397,21 @@ export default function CustomDesignPage() {
           'Sesuaikan dengan peraturan setempat'
         ],
         nextSteps: [
-          'Konsultasi dengan arsitek',
-          'Pembuatan desain detail',
-          'Perhitungan anggaran detail',
-          'Pengajuan IMB',
-          'Persiapan dokumen kontrak'
+          '🎯 Konsultasi dengan Arsitek Berlisensi (WAJIB)',
+          '📐 Pembuatan Gambar Kerja Sesuai SNI',
+          '🔬 Analisis Struktur & Perhitungan Engineer',
+          '🏗️ Survey Kondisi Tanah & Topografi',
+          '📋 Perhitungan RAB (Rencana Anggaran Biaya) Detail',
+          '📄 Pengurusan IMB & Dokumen Legal',
+          '👷 Pelaksanaan Konstruksi dengan Pengawasan'
         ]
       };
       
       setFinalResult(result);
       setCurrentStep(5);
+      
+      // Auto-generate floor plan based on user's selections
+      generateFloorPlan();
     } else {
       // Identify which selections are missing
       const missing = [];
@@ -448,9 +474,9 @@ export default function CustomDesignPage() {
 
 
 
-  const goToSavedDesigns = () => {
-    router.push('/Profile/saved-designs');
-  };
+  // const goToSavedDesigns = () => {
+  //   router.push('/Profile/saved-designs');
+  // };
 
   // Update the generateFeatures function to process AI-generated features
   const generateFeatures = async () => {
@@ -526,7 +552,88 @@ export default function CustomDesignPage() {
     }
   };
 
-  // Add a new state variable for dynamic design features
+  const generateFloorPlan = async () => {
+    if (!selectedDesign || !selectedBudget || !selectedLocation) {
+      console.log('Data desain tidak lengkap untuk generate denah');
+      return;
+    }
+
+    setIsGeneratingFloorPlan(true);
+    try {
+      const budget = selectedBudget?.range || budgetInput;
+      const response = await fetch('/api/generate-floorplan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          designStyle: selectedDesign.style,
+          budget: budget,
+          location: selectedLocation.name,
+          features: selectedFeatures.map(f => f.name),
+          rooms: ['Ruang Tamu', 'Kamar Tidur', 'Dapur', 'Kamar Mandi'],
+          size: budget.includes('500') ? '6x8m' : '8x10m'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.floorPlan) {
+        setFloorPlan(data.floorPlan);
+        console.log('Floor plan generated:', data.floorPlan.name);
+        if (data.fallback) {
+          console.warn('Using fallback mock data for floor plan');
+        }
+      } else {
+        throw new Error(data.error || 'Gagal generate denah rumah');
+      }
+    } catch (error) {
+      console.error('Error generating floor plan:', error);
+      // Don't alert user, just log the error - floor plan is optional
+    } finally {
+      setIsGeneratingFloorPlan(false);
+    }
+  };
+
+  const handleDownloadDesign = async () => {
+    if (!user) {
+      alert('Silakan login terlebih dahulu');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const designData = {
+        name: selectedDesign?.name || 'Custom Design',
+        description: selectedDesign?.description || 'Custom generated design',
+        style: selectedDesign?.style || 'Modern',
+        keyFeatures: selectedFeatures.map(f => f.name),
+        estimatedPrice: selectedBudget?.range || budgetInput,
+        characteristics: {
+          exterior: selectedDesign?.characteristics?.exterior || [],
+          interior: selectedDesign?.characteristics?.interior || [],
+          materials: selectedDesign?.characteristics?.materials || [],
+          sustainability: selectedDesign?.characteristics?.sustainability || []
+        },
+        suitability: selectedDesign?.suitability || [],
+        prompt: userDescription
+      };
+
+      const result = await saveGeneratedDesign(user.uid, designData);
+      
+      if (result.success) {
+        alert('Desain berhasil disimpan!');
+      } else {
+        throw new Error(result.error || 'Gagal menyimpan desain');
+      }
+    } catch (error) {
+      console.error('Error saving design:', error);
+      alert(error instanceof Error ? error.message : 'Terjadi kesalahan saat menyimpan desain');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+
   const [designFeatures, setDesignFeatures] = useState<DesignFeature[]>([
     // Initial static features that will be replaced with AI-generated ones
     {
@@ -572,53 +679,6 @@ export default function CustomDesignPage() {
       compatibleStyles: ['modern-minimalist']
     }
   ]);
-
-  const handleDownloadDesign = async () => {
-    if (!user) {
-      alert('Anda harus login untuk menyimpan desain');
-      router.push('/Login');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      if (!finalResult.design) {
-        throw new Error('Tidak ada desain yang dapat disimpan');
-      }
-
-      // Prepare the design data
-      const designData = {
-        name: finalResult.design.name,
-        description: finalResult.design.description,
-        style: finalResult.design.style,
-        keyFeatures: finalResult.features,
-        estimatedPrice: finalResult.budget || 'Tidak ditentukan',
-        characteristics: {
-          exterior: finalResult.location?.considerations?.filter((_, i) => i % 2 === 0) || [],
-          interior: finalResult.location?.considerations?.filter((_, i) => i % 2 === 1) || [],
-          materials: ['Sesuai dengan desain yang dipilih'],
-          sustainability: ['Sesuai dengan desain yang dipilih']
-        },
-        suitability: [finalResult.location?.name || 'Lokasi tidak ditentukan'],
-        prompt: userDescription
-      };
-
-      const result = await saveGeneratedDesign(user.uid, designData);
-      
-      if (result.success) {
-        alert('Desain berhasil disimpan!');
-        // Redirect to the saved designs page
-        router.push('/Profile/saved-designs');
-      } else {
-        throw new Error(result.error || 'Gagal menyimpan desain');
-      }
-    } catch (error) {
-      console.error('Error saving design:', error);
-      alert(error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F6F6EC] to-[#F0F4E8]">
@@ -782,8 +842,8 @@ export default function CustomDesignPage() {
                         </div>
 
                         <div className="mb-4">
-                          <span className="text-sm font-medium text-gray-700 mb-2 block">Fitur Utama:</span>
-                          <ul className="space-y-2">
+                          <span className="text-sm font-medium text-gray-700">Fitur Utama:</span>
+                          <ul className="mt-2 space-y-2">
                             {(suggestion.keyFeatures || []).map((feature, index) => (
                               <li key={index} className="flex items-center text-gray-600">
                                 <FiCheck className="w-4 h-4 text-amber-600 mr-2" />
@@ -982,11 +1042,65 @@ export default function CustomDesignPage() {
 
           {currentStep === 5 && (
             <div className="space-y-8">
+              {/* Disclaimer Section */}
+              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
+                <div className="flex items-start">
+                  <FiAlertTriangle className="w-6 h-6 text-red-600 mr-3 mt-1 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-red-800 mb-2">
+                      ⚠️ Penting: Desain AI Adalah Konsep Awal
+                    </h3>
+                    <p className="text-red-700 mb-3">
+                      Desain dan denah yang dihasilkan AI ini adalah <strong>konsep awal</strong> dan <strong>BELUM memenuhi standar konstruksi sipil</strong> yang diperlukan untuk pembangunan rumah.
+                    </p>
+                    <div className="bg-white p-4 rounded-lg mb-3">
+                      <p className="text-sm font-semibold text-gray-800 mb-2">
+                        Yang BELUM termasuk dalam desain AI:
+                      </p>
+                      <ul className="space-y-1 text-sm text-gray-700">
+                        <li className="flex items-start">
+                          <span className="mr-2">❌</span>
+                          <span>Perhitungan struktur (balok, kolom, fondasi) sesuai SNI</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">❌</span>
+                          <span>Analisis beban gempa (penting untuk Indonesia!)</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">❌</span>
+                          <span>Detail konstruksi dan gambar kerja</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">❌</span>
+                          <span>Rencana instalasi MEP (listrik, plumbing, AC)</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">❌</span>
+                          <span>Analisis kondisi tanah dan fondasi yang sesuai</span>
+                        </li>
+                        <li className="flex items-start">
+                          <span className="mr-2">❌</span>
+                          <span>Dokumen untuk IMB (Izin Mendirikan Bangunan)</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                      <p className="text-sm font-semibold text-green-800 mb-2">
+                        ✅ Langkah Wajib Selanjutnya:
+                      </p>
+                      <p className="text-sm text-green-700">
+                        Konsultasikan desain ini dengan <strong>arsitek berlisensi</strong> dan <strong>engineer sipil</strong> untuk mendapatkan gambar kerja yang sesuai standar konstruksi dan aman untuk dibangun.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-white rounded-2xl shadow-lg p-8">
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-800">Desain Rumah Impian Anda</h2>
-                    <p className="text-gray-600 mt-2">Berikut adalah ringkasan desain rumah yang telah Anda pilih</p>
+                    <p className="text-gray-600">Berikut adalah ringkasan desain rumah yang telah Anda pilih</p>
                   </div>
                   <div className="bg-amber-100 px-6 py-3 rounded-full">
                     <span className="text-amber-800 font-medium">Selesai</span>
@@ -1099,13 +1213,22 @@ export default function CustomDesignPage() {
                     Mulai Ulang
                   </button>
                   <div className="flex space-x-4">
-                    <button
-                      onClick={goToSavedDesigns}
+                    <a
+                      href={`/api/generate-floorplan/download-image/${floorPlan?.id}`}
+                      download
                       className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors flex items-center"
                     >
-                      <FiList className="mr-2" />
-                      Lihat Desain Tersimpan
-                    </button>
+                      <FiImage className="mr-2" />
+                      Download Gambar
+                    </a>
+                    <a
+                      href={floorPlan?.downloadUrl}
+                      download
+                      className="px-6 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors flex items-center"
+                    >
+                      <FiFileText className="mr-2" />
+                      Download HTML
+                    </a>
                     <button
                       onClick={handleDownloadDesign}
                       disabled={isSaving}
@@ -1123,9 +1246,159 @@ export default function CustomDesignPage() {
                       ) : (
                         <>
                           <FiDownload className="mr-2" />
-                          Simpan Desain
+                          Simpan Semua
                         </>
                       )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floor Plan Preview Section */}
+              {floorPlan && (
+                <div className="bg-white rounded-2xl shadow-lg p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800">Preview Denah Rumah</h2>
+                      <p className="text-gray-600">Denah otomatis berdasarkan pilihan Anda</p>
+                    </div>
+                    <div className="bg-blue-100 px-4 py-2 rounded-full">
+                      <span className="text-blue-800 font-medium text-sm">AI Generated</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Floor Plan Image */}
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <Image
+                        src={floorPlan.imageUrl} 
+                        alt={floorPlan.name}
+                        width={800}
+                        height={600}
+                        className="w-full h-auto rounded-lg shadow-md"
+                      />
+                      <div className="mt-4 flex justify-center space-x-3">
+                        <a
+                          href={`/api/generate-floorplan/download-image/${floorPlan.id}`}
+                          download
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center"
+                        >
+                          <FiImage className="mr-2" />
+                          Download Gambar
+                        </a>
+                        <a
+                          href={floorPlan.downloadUrl}
+                          download
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center"
+                        >
+                          <FiFileText className="mr-2" />
+                          Download HTML
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Floor Plan Details */}
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 p-4 rounded-xl">
+                        <h4 className="font-semibold text-gray-800 mb-2">{floorPlan.name}</h4>
+                        <p className="text-sm text-gray-600">{floorPlan.description}</p>
+                      </div>
+
+                      <div className="bg-gray-50 p-4 rounded-xl">
+                        <h4 className="font-semibold text-gray-800 mb-3">Spesifikasi</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Luas Total:</span>
+                            <span className="font-medium text-gray-800">{floorPlan.specifications.totalArea}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Jumlah Ruangan:</span>
+                            <span className="font-medium text-gray-800">{floorPlan.specifications.rooms.length} ruangan</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 p-4 rounded-xl">
+                        <h4 className="font-semibold text-gray-800 mb-3">Ruangan</h4>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {floorPlan.specifications.rooms.map((room, index) => (
+                            <div key={index} className="flex justify-between items-start text-sm border-b border-gray-200 pb-2">
+                              <div className="flex-1">
+                                <span className="font-medium text-gray-800">{room.name}</span>
+                                <p className="text-xs text-gray-500">{room.description}</p>
+                              </div>
+                              <span className="text-gray-600 ml-2">{room.size}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-amber-50 p-4 rounded-xl">
+                        <h4 className="font-semibold text-gray-800 mb-2">Fitur Denah</h4>
+                        <ul className="space-y-1">
+                          {floorPlan.specifications.features.map((feature, index) => (
+                            <li key={index} className="flex items-center text-sm text-gray-600">
+                              <FiCheck className="w-4 h-4 text-amber-600 mr-2 flex-shrink-0" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading State for Floor Plan */}
+              {!floorPlan && (
+                <div className="bg-white rounded-2xl shadow-lg p-8">
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <FiLoader className="w-12 h-12 text-amber-600 animate-spin mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Membuat Denah Rumah...</h3>
+                    <p className="text-gray-600 text-center">
+                      AI sedang membuat denah rumah berdasarkan pilihan Anda.<br />
+                      Mohon tunggu sebentar...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* CTA Konsultasi Section */}
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-8 text-white shadow-xl">
+                <div className="flex flex-col md:flex-row items-center justify-between">
+                  <div className="flex-1 mb-6 md:mb-0">
+                    <h3 className="text-2xl md:text-3xl font-bold mb-3">
+                      Siap Wujudkan Rumah Impian Anda?
+                    </h3>
+                    <p className="text-amber-50 mb-4 text-sm md:text-base">
+                      Konsultasikan desain AI Anda dengan arsitek profesional kami untuk mendapatkan gambar kerja yang siap dibangun sesuai standar konstruksi.
+                    </p>
+                    <ul className="space-y-2 text-sm text-amber-50">
+                      <li className="flex items-center">
+                        <FiCheck className="mr-2 flex-shrink-0" />
+                        <span>Arsitek berlisensi IAI (Ikatan Arsitek Indonesia)</span>
+                      </li>
+                      <li className="flex items-center">
+                        <FiCheck className="mr-2 flex-shrink-0" />
+                        <span>Engineer sipil berpengalaman</span>
+                      </li>
+                      <li className="flex items-center">
+                        <FiCheck className="mr-2 flex-shrink-0" />
+                        <span>Garansi sesuai standar SNI & building code</span>
+                      </li>
+                      <li className="flex items-center">
+                        <FiCheck className="mr-2 flex-shrink-0" />
+                        <span>Bantuan pengurusan IMB</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="md:ml-8">
+                    <button
+                      onClick={() => router.push('/consultation')}
+                      className="px-8 py-4 bg-white text-amber-600 rounded-xl font-bold text-lg hover:bg-amber-50 transition-all transform hover:scale-105 shadow-lg flex items-center"
+                    >
+                      Konsultasi Sekarang
+                      <FiArrowRight className="ml-2" />
                     </button>
                   </div>
                 </div>
@@ -1134,7 +1407,7 @@ export default function CustomDesignPage() {
           )}
 
           {/* Navigation Buttons */}
-          {currentStep < designSteps.length && (
+          {currentStep < designSteps.length && !showFloorPlanStep && (
             <div className="flex justify-between mt-8">
               <button
                 onClick={handlePrevStep}
