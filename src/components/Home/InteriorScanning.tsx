@@ -51,7 +51,7 @@ export default function InteriorScanning() {
                 variants={itemVariants}
               >
                 <div className="w-4 h-px bg-[#594C1A]/50" />
-                SiapHuni Interior
+                LayakHuni Interior
               </motion.div>
               
               <motion.h2 

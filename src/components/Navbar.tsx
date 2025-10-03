@@ -305,8 +305,8 @@ export default function Navbar() {
           <div className="flex items-center justify-between px-4 py-3">
             <Link href="/" className="font-bold text-xl text-amber-800">
               <Image 
-                src={isScrolled || isMobileMenuOpen ? "/icon/Logo.svg" : "/icon/LogoPutih.svg"} 
-                alt="SiapHuni Logo" 
+                src={isScrolled || isMobileMenuOpen ? "/icon/Logo.png" : "/icon/LogoPutih.png"} 
+                alt="LayakHuni Logo" 
                 width={60} 
                 height={60} 
               />

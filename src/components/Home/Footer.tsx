@@ -93,7 +93,7 @@ const Footer = () => {
               viewport={{ once: true }}
             >
               <Link href="/" className="block mb-6">
-                <Image src="/icon/Logo.svg" alt="SiapHuni Logo" className="h-12" width={120} height={40} />
+                <Image src="/icon/Logo.png" alt="LayakHuni Logo" className="h-12" width={120} height={40} />
               </Link>
               <p className="text-[#594C1A]/80 mb-6">
                 Platform terpercaya untuk menemukan rumah siap huni berkualitas premium dengan proses yang mudah dan transparan.

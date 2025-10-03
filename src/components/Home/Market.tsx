@@ -113,7 +113,7 @@ const Market = () => {
                 textShadow: "2px 2px 4px rgba(89, 76, 26, 0.2)"
               }}
             >
-              Rumah Siap Huni
+              Rumah Layak Huni
               <br />
               <span className="text-[#938656]">Berkualitas Premium</span>
             </motion.h1>

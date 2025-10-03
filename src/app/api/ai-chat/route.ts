@@ -3,6 +3,12 @@ import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { collection, getDocs, DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
+// Check if Firebase is properly configured
+const isFirebaseConfigured = () => {
+  return process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+         process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "demo-api-key";
+};
+
 // Define types for house data
 interface HouseData {
   id: string;
@@ -694,6 +700,12 @@ async function initializeWorkingModel(houses: HouseData[]): Promise<GenerativeMo
 // Function to get house data from Firestore
 async function getHouseData(): Promise<HouseData[]> {
   try {
+    // Skip Firebase operations during build time if not configured
+    if (!isFirebaseConfigured()) {
+      console.log('Firebase not configured, returning empty house data for build');
+      return [];
+    }
+
     const housesCollection = collection(db, 'houses');
     const housesSnapshot = await getDocs(housesCollection);
     
@@ -712,6 +724,7 @@ async function getHouseData(): Promise<HouseData[]> {
     return houses;
   } catch (error) {
     console.error('Error fetching house data:', error);
+    // Return empty array on error to prevent build failure
     return [];
   }
 }

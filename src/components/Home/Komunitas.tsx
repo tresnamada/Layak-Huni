@@ -79,7 +79,7 @@ export default function Komunitas() {
                 variants={itemVariants}
               >
                 <div className="w-4 h-px bg-[#594C1A]/50" />
-                Komunitas Siap Huni
+                Komunitas Layak Huni
               </motion.div>
               
               <motion.h2 
