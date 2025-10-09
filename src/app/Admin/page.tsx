@@ -92,7 +92,9 @@ export default function AdminDashboard() {
       try {
         const adminStatus = await isAdmin(user.uid);
         if (!adminStatus) {
-          router.push('/');
+          setError('You do not have admin privileges. Visit /setup-admin to grant yourself admin access.');
+          setLoading(false);
+          setIsCheckingAuth(false);
           return;
         }
 
@@ -136,7 +138,13 @@ export default function AdminDashboard() {
 
       } catch (err) {
         console.error('Error loading dashboard data:', err);
-        setError('Failed to load dashboard data');
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        
+        if (errorMessage.includes('Missing or insufficient permissions')) {
+          setError('Permission denied. Your account may not have admin privileges set in the database. Visit /setup-admin to grant yourself admin access.');
+        } else {
+          setError('Failed to load dashboard data: ' + errorMessage);
+        }
       } finally {
         setLoading(false);
         setIsCheckingAuth(false);

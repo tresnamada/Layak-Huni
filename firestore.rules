@@ -80,8 +80,11 @@ service cloud.firestore {
 
     // Purchases collection rules
     match /purchases/{purchaseId} {
-      // Allow read if user is the owner of the purchase or admin
-      allow read: if isAuthenticated() && (
+      // Allow list/get operations - split for better performance
+      // List queries are allowed for admins (checked once for the entire query)
+      allow list: if isAuthenticated() && isAdmin();
+      // Get operations allow owners or admins
+      allow get: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );
       
@@ -285,3 +288,6 @@ service cloud.firestore {
     }
   }
 } 
+
+
+

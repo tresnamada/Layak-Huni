@@ -499,6 +499,8 @@ export default function AddHousePage() {
       setIsSubmitting(false);
     }
   };
+
+  
   
   // House type options
   const houseTypes = [
